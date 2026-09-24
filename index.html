@@ -61,25 +61,74 @@
 
 <dialog id="createDialog"><form method="dialog" class="dialog-card"><h2>Criar novo</h2><button type="button" data-action="habit">Novo hábito</button><button type="button" data-action="prayer">Nova oração</button><button type="button" data-action="task">Nova tarefa</button><button class="cancel">Cancelar</button></form></dialog>
 
+<dialog id="habitDialog"><form id="habitForm" class="dialog-card form-scroll">
+<h2 id="habitFormTitle">Novo hábito</h2><input type="hidden" id="habitId">
+<label>Nome<input id="habitName" required maxlength="70"></label>
+
+<label>Ícone</label>
+<div class="emoji-selected-row"><span id="habitIconPreview">📖</span><span>Toque em um emoji para escolher</span></div>
+<input type="hidden" id="habitIcon" value="📖">
+<div id="emojiPicker" class="emoji-picker"></div>
+
+<label>Categoria<select id="habitCategory"><option>Espiritual</option><option>Saúde</option><option>Estudos</option><option>Pessoal</option><option>Trabalho</option><option>Organização</option><option>Outro</option></select></label>
+<label>Horário<input id="habitTime" type="time"></label>
+<label>Frequência<select id="habitFrequency"><option value="daily">Diária</option><option value="weekly">Semanal / dias da semana</option><option value="monthly">Mensal</option><option value="yearly">Anual</option><option value="date">Data específica</option><option value="range">Intervalo de datas</option></select></label>
+<div id="habitWeekly" class="freq-box hidden"><div class="weekday-grid"><label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label></div></div>
+<div id="habitMonthly" class="freq-box hidden"><label>Dia do mês<input id="habitMonthDay" type="number" min="1" max="31" value="1"></label></div>
+<div id="habitYearly" class="freq-box hidden"><label>Data anual<input id="habitYearDate" type="date"></label></div>
+<div id="habitDateBox" class="freq-box hidden"><label>Data<input id="habitDate" type="date"></label></div>
+<div id="habitRange" class="freq-box hidden"><label>Data inicial<input id="habitStartDate" type="date"></label><label>Data final<input id="habitEndDate" type="date"></label></div>
+<button type="submit" class="save">Salvar hábito</button><button type="button" class="cancel" id="cancelHabit">Cancelar</button>
+</form></dialog>
+
+<dialog id="prayerFormDialog"><form id="prayerForm" class="dialog-card form-scroll">
+<h2 id="prayerFormTitle">Nova oração</h2><input type="hidden" id="prayerId">
+<label>Nome<input id="prayerName" required maxlength="80"></label>
+<label>Texto da oração</label>
+<div class="rich-toolbar">
+<button type="button" id="boldBtn"><b>B</b></button>
+<button type="button" id="separatorBtn">― Separador</button>
+</div>
+<div id="prayerEditor" class="rich-editor" contenteditable="true" data-placeholder="Escreva aqui a oração..."></div>
+<small class="helper">Selecione um trecho e toque em <b>B</b> para deixar em negrito.</small>
+<label>Horário<input id="prayerTime" type="time"></label>
+<label>Frequência<select id="prayerFrequency"><option value="daily">Diária</option><option value="weekly">Semanal / dias da semana</option><option value="monthly">Mensal</option><option value="yearly">Anual</option><option value="date">Data específica</option><option value="range">Intervalo de datas</option></select></label>
+<div id="prayerWeekly" class="freq-box hidden"><div class="weekday-grid"><label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label></div></div>
+<div id="prayerMonthly" class="freq-box hidden"><label>Dia do mês<input id="prayerMonthDay" type="number" min="1" max="31" value="1"></label></div>
+<div id="prayerYearly" class="freq-box hidden"><label>Data anual<input id="prayerYearDate" type="date"></label></div>
+<div id="prayerDateBox" class="freq-box hidden"><label>Data<input id="prayerDate" type="date"></label></div>
+<div id="prayerRange" class="freq-box hidden"><label>Data inicial<input id="prayerStartDate" type="date"></label><label>Data final<input id="prayerEndDate" type="date"></label></div>
+<button type="submit" class="save">Salvar oração</button><button type="button" class="cancel" id="cancelPrayerForm">Cancelar</button>
+</form></dialog>
+
 <dialog id="taskFormDialog"><form id="taskForm" class="dialog-card form-scroll">
 <h2 id="taskFormTitle">Nova tarefa</h2><input type="hidden" id="taskId">
-<label>Título<input id="taskName" required maxlength="90" placeholder="Ex.: Comprar materiais"></label>
-<label>Descrição <small>(opcional)</small><textarea id="taskNotes" rows="4"></textarea></label>
+<label>Título<input id="taskName" required maxlength="90"></label>
+<label>Descrição<textarea id="taskNotes" rows="4"></textarea></label>
 <label>Categoria<select id="taskCategory"><option>Pessoal</option><option>Trabalho</option><option>Pastoral</option><option>Casa</option><option>Estudos</option><option>Marca</option><option>Outro</option></select></label>
 <label>Prioridade<select id="taskPriority"><option value="normal">Normal</option><option value="high">Alta</option><option value="low">Baixa</option></select></label>
-<label>Horário <small>(opcional)</small><input id="taskTime" type="time"></label>
+<label>Horário<input id="taskTime" type="time"></label>
 <label>Frequência<select id="taskFrequency"><option value="date">Data específica</option><option value="daily">Diária</option><option value="weekly">Semanal / dias da semana</option><option value="monthly">Mensal</option><option value="yearly">Anual</option><option value="range">Intervalo de datas</option></select></label>
-
-<div id="taskWeekly" class="freq-box hidden"><span class="label-like">Dias da semana</span><div class="weekday-grid">
-<label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label>
-</div></div>
+<div id="taskWeekly" class="freq-box hidden"><div class="weekday-grid"><label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label></div></div>
 <div id="taskMonthly" class="freq-box hidden"><label>Dia do mês<input id="taskMonthDay" type="number" min="1" max="31" value="1"></label></div>
 <div id="taskYearly" class="freq-box hidden"><label>Data anual<input id="taskYearDate" type="date"></label></div>
 <div id="taskDateBox" class="freq-box"><label>Data<input id="taskDate" type="date"></label></div>
 <div id="taskRange" class="freq-box hidden"><label>Data inicial<input id="taskStartDate" type="date"></label><label>Data final<input id="taskEndDate" type="date"></label></div>
-
 <button type="submit" class="save">Salvar tarefa</button><button type="button" class="cancel" id="cancelTaskForm">Cancelar</button>
 </form></dialog>
+
+<dialog id="habitDetailDialog"><div class="dialog-card">
+<div id="habitDetailIcon" class="detail-icon"></div><h2 id="habitDetailName"></h2><p id="habitDetailMeta"></p>
+<div class="button-row"><button id="editHabit" class="save">Editar hábito</button><button id="archiveHabit">Arquivar</button></div>
+<button id="habitItemHistory">Ver histórico</button><button id="closeHabitDetail" class="cancel">Fechar</button>
+</div></dialog>
+
+<dialog id="prayerDetailDialog"><div class="dialog-card prayer-content">
+<h2 id="prayerTitle"></h2><p id="prayerMeta"></p><div id="prayerText"></div>
+<button id="finishPrayer" class="save">Marcar como finalizada</button>
+<div class="button-row"><button id="editPrayer">Editar</button><button id="archivePrayer">Arquivar</button></div>
+<button id="prayerItemHistory">Ver histórico</button><button id="closePrayer" class="cancel">Fechar</button>
+</div></dialog>
 
 <dialog id="taskDetailDialog"><div class="dialog-card">
 <h2 id="taskDetailName"></h2><p id="taskDetailMeta"></p><p id="taskDetailNotes"></p>
@@ -87,31 +136,8 @@
 <button id="taskItemHistory">Ver histórico</button><button id="closeTaskDetail" class="cancel">Fechar</button>
 </div></dialog>
 
-<!-- dialogs reused for habits/prayers/history/archive -->
 <dialog id="historyDialog"><div class="dialog-card form-scroll"><h2 id="historyTitle">Histórico</h2><div id="historyContent" class="history-list"></div><button id="closeHistory" class="cancel">Fechar</button></div></dialog>
 <dialog id="archiveDialog"><div class="dialog-card form-scroll"><h2 id="archiveTitle">Arquivados</h2><div id="archiveContent" class="list-stack"></div><button id="closeArchive" class="cancel">Fechar</button></div></dialog>
-
-<!-- hidden forms for habits/prayers: keep basic functionality from v0.3 -->
-<dialog id="habitDialog"><form id="habitForm" class="dialog-card form-scroll">
-<h2 id="habitFormTitle">Novo hábito</h2><input type="hidden" id="habitId">
-<label>Nome<input id="habitName" required></label><label>Ícone<select id="habitIcon"><option value="📖">Livro</option><option value="🙏">Oração</option><option value="🏃">Exercício</option><option value="🧠">Estudos</option><option value="⭐">Outro</option></select></label>
-<label>Categoria<select id="habitCategory"><option>Espiritual</option><option>Saúde</option><option>Estudos</option><option>Pessoal</option><option>Trabalho</option><option>Organização</option><option>Outro</option></select></label>
-<label>Horário<input id="habitTime" type="time"></label><label>Frequência<select id="habitFrequency"><option value="daily">Diária</option><option value="weekly">Semanal / dias da semana</option><option value="monthly">Mensal</option><option value="yearly">Anual</option><option value="date">Data específica</option><option value="range">Intervalo de datas</option></select></label>
-<div id="habitWeekly" class="freq-box hidden"><div class="weekday-grid"><label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label></div></div>
-<div id="habitMonthly" class="freq-box hidden"><label>Dia do mês<input id="habitMonthDay" type="number" min="1" max="31" value="1"></label></div><div id="habitYearly" class="freq-box hidden"><label>Data anual<input id="habitYearDate" type="date"></label></div><div id="habitDateBox" class="freq-box hidden"><label>Data<input id="habitDate" type="date"></label></div><div id="habitRange" class="freq-box hidden"><label>Data inicial<input id="habitStartDate" type="date"></label><label>Data final<input id="habitEndDate" type="date"></label></div>
-<button type="submit" class="save">Salvar hábito</button><button type="button" class="cancel" id="cancelHabit">Cancelar</button>
-</form></dialog>
-
-<dialog id="prayerFormDialog"><form id="prayerForm" class="dialog-card form-scroll">
-<h2 id="prayerFormTitle">Nova oração</h2><input type="hidden" id="prayerId"><label>Nome<input id="prayerName" required></label><label>Texto<textarea id="prayerBody" rows="7"></textarea></label><label>Horário<input id="prayerTime" type="time"></label>
-<label>Frequência<select id="prayerFrequency"><option value="daily">Diária</option><option value="weekly">Semanal / dias da semana</option><option value="monthly">Mensal</option><option value="yearly">Anual</option><option value="date">Data específica</option><option value="range">Intervalo de datas</option></select></label>
-<div id="prayerWeekly" class="freq-box hidden"><div class="weekday-grid"><label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label></div></div>
-<div id="prayerMonthly" class="freq-box hidden"><label>Dia do mês<input id="prayerMonthDay" type="number" min="1" max="31" value="1"></label></div><div id="prayerYearly" class="freq-box hidden"><label>Data anual<input id="prayerYearDate" type="date"></label></div><div id="prayerDateBox" class="freq-box hidden"><label>Data<input id="prayerDate" type="date"></label></div><div id="prayerRange" class="freq-box hidden"><label>Data inicial<input id="prayerStartDate" type="date"></label><label>Data final<input id="prayerEndDate" type="date"></label></div>
-<button type="submit" class="save">Salvar oração</button><button type="button" class="cancel" id="cancelPrayerForm">Cancelar</button>
-</form></dialog>
-
-<dialog id="habitDetailDialog"><div class="dialog-card"><div id="habitDetailIcon" class="detail-icon"></div><h2 id="habitDetailName"></h2><p id="habitDetailMeta"></p><div class="button-row"><button id="editHabit" class="save">Editar</button><button id="archiveHabit">Arquivar</button></div><button id="habitItemHistory">Ver histórico</button><button id="closeHabitDetail" class="cancel">Fechar</button></div></dialog>
-<dialog id="prayerDetailDialog"><div class="dialog-card prayer-content"><h2 id="prayerTitle"></h2><p id="prayerMeta"></p><div id="prayerText"></div><button id="finishPrayer" class="save">Marcar como finalizada</button><div class="button-row"><button id="editPrayer">Editar</button><button id="archivePrayer">Arquivar</button></div><button id="prayerItemHistory">Ver histórico</button><button id="closePrayer" class="cancel">Fechar</button></div></dialog>
 
 <script src="app.js"></script>
 </body>
