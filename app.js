@@ -1,457 +1,50 @@
-
-const STORE_KEY = "isa_app_data_v02";
-const OLD_KEY = "isa_app_v01";
-
-function todayKey(date = new Date()){
-  const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,"0");
-  const d = String(date.getDate()).padStart(2,"0");
-  return `${y}-${m}-${d}`;
-}
-
-function parseLocalDate(s){
-  if(!s) return null;
-  const [y,m,d] = s.split("-").map(Number);
-  return new Date(y, m-1, d, 12, 0, 0);
-}
-
-function defaultState(){
-  return {
-    version: 2,
-    habits: [],
-    habitCompletions: {},
-    prayers: [],
-    prayerCompletions: {},
-    tasks: [],
-    taskCompletions: {},
-    createdAt: new Date().toISOString()
-  };
-}
-
-function migrateOld(){
-  const oldRaw = localStorage.getItem(OLD_KEY);
-  const fresh = defaultState();
-  if(!oldRaw) return fresh;
-  try{
-    const old = JSON.parse(oldRaw);
-    fresh.habits = (old.habits || []).map(h => ({
-      id:h.id || crypto.randomUUID(),
-      name:h.name,
-      icon:"📖",
-      category:"Pessoal",
-      time:"",
-      frequency:{type:"daily"},
-      archived:false,
-      createdAt:new Date().toISOString()
-    }));
-    fresh.prayers = (old.prayers || []).map(p => ({
-      id:p.id || crypto.randomUUID(),
-      name:p.name,
-      text:p.text || "",
-      archived:false
-    }));
-    fresh.tasks = (old.tasks || []).map(t => ({
-      id:t.id || crypto.randomUUID(),
-      name:t.name,
-      archived:false
-    }));
-    const tk = todayKey();
-    (old.habits || []).filter(h=>h.done).forEach(h=>{
-      fresh.habitCompletions[`${h.id}|${tk}`] = true;
-    });
-    (old.prayers || []).filter(p=>p.done).forEach(p=>{
-      fresh.prayerCompletions[`${p.id}|${tk}`] = true;
-    });
-    (old.tasks || []).filter(t=>t.done).forEach(t=>{
-      fresh.taskCompletions[`${t.id}|${tk}`] = true;
-    });
-  }catch(e){}
-  return fresh;
-}
-
-function loadState(){
-  const raw = localStorage.getItem(STORE_KEY);
-  if(raw){
-    try{return JSON.parse(raw)}catch(e){}
-  }
-  const state = migrateOld();
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  return state;
-}
-
-let state = loadState();
-let habitView = "today";
-let activeHabitId = null;
-
-function save(){
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  renderAll();
-}
-
-function completionKey(id, dateKey){
-  return `${id}|${dateKey}`;
-}
-
-function isHabitDone(id, dateKey = todayKey()){
-  return !!state.habitCompletions[completionKey(id,dateKey)];
-}
-
-function isPrayerDone(id, dateKey = todayKey()){
-  return !!state.prayerCompletions[completionKey(id,dateKey)];
-}
-
-function isTaskDone(id, dateKey = todayKey()){
-  return !!state.taskCompletions[completionKey(id,dateKey)];
-}
-
-function toggleCompletion(type,id){
-  const key = completionKey(id,todayKey());
-  const map = type==="habit" ? state.habitCompletions : type==="prayer" ? state.prayerCompletions : state.taskCompletions;
-  if(map[key]) delete map[key];
-  else map[key] = true;
-  save();
-}
-
-function isHabitScheduledOn(habit, date){
-  if(habit.archived) return false;
-  const f = habit.frequency || {type:"daily"};
-  const dk = todayKey(date);
-  switch(f.type){
-    case "daily": return true;
-    case "weekly": return (f.weekdays || []).includes(date.getDay());
-    case "monthly": return date.getDate() === Number(f.day || 1);
-    case "yearly": {
-      if(!f.date) return false;
-      const d = parseLocalDate(f.date);
-      return d && d.getDate()===date.getDate() && d.getMonth()===date.getMonth();
-    }
-    case "date": return f.date === dk;
-    case "range": return !!f.start && !!f.end && dk >= f.start && dk <= f.end;
-    default: return true;
-  }
-}
-
-function habitsForToday(){
-  const now = new Date();
-  return state.habits.filter(h => isHabitScheduledOn(h, now));
-}
-
-function formatDate(){
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday:"long", day:"2-digit", month:"long"
-  }).format(new Date());
-}
-document.getElementById("todayText").textContent = formatDate();
-document.getElementById("agendaDate").textContent = formatDate();
-
-function frequencyLabel(h){
-  const f = h.frequency || {type:"daily"};
-  if(f.type==="daily") return "Todos os dias";
-  if(f.type==="weekly"){
-    const names=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-    return (f.weekdays||[]).map(x=>names[x]).join(", ") || "Sem dias";
-  }
-  if(f.type==="monthly") return `Todo dia ${f.day}`;
-  if(f.type==="yearly"){
-    const d=parseLocalDate(f.date);
-    return d ? `Todo ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}` : "Anual";
-  }
-  if(f.type==="date") return `Em ${formatShortDate(f.date)}`;
-  if(f.type==="range") return `${formatShortDate(f.start)} a ${formatShortDate(f.end)}`;
-  return "";
-}
-
-function formatShortDate(s){
-  const d = parseLocalDate(s);
-  return d ? new Intl.DateTimeFormat("pt-BR").format(d) : "";
-}
-
-function renderHabits(){
-  const list = document.getElementById("habitList");
-  const empty = document.getElementById("habitEmpty");
-  const habits = habitView==="today" ? habitsForToday() : state.habits.filter(h=>!h.archived);
-  list.innerHTML="";
-  empty.classList.toggle("hidden", habits.length>0);
-
-  habits.forEach(h=>{
-    const done = isHabitDone(h.id);
-    const el=document.createElement("article");
-    el.className="item-card"+(done?" done":"");
-    el.innerHTML=`
-      <div class="item-top">
-        <span class="item-icon">${h.icon || "⭐"}</span>
-        ${h.time ? `<span class="item-time">${h.time}</span>` : ""}
-      </div>
-      <div>
-        <button class="item-title" data-hdetail="${h.id}">${escapeHTML(h.name)}</button>
-        <div class="item-category">${escapeHTML(h.category || "")}</div>
-      </div>
-      ${habitView==="today" ? `<button class="check ${done?"done":""}" data-habit="${h.id}">${done?"✓":""}</button>` : ""}
-    `;
-    list.appendChild(el);
-  });
-
-  list.querySelectorAll("[data-habit]").forEach(btn=>{
-    btn.addEventListener("click",()=>toggleCompletion("habit",btn.dataset.habit));
-  });
-  list.querySelectorAll("[data-hdetail]").forEach(btn=>{
-    btn.addEventListener("click",()=>openHabitDetail(btn.dataset.hdetail));
-  });
-}
-
-function renderPrayers(){
-  const root=document.getElementById("prayerList");
-  root.innerHTML="";
-  const prayers=state.prayers.filter(p=>!p.archived);
-  if(!prayers.length){
-    root.innerHTML='<p class="empty">Nenhuma oração cadastrada.</p>';
-    return;
-  }
-  prayers.forEach(p=>{
-    const done=isPrayerDone(p.id);
-    const el=document.createElement("article");
-    el.className="list-item"+(done?" done":"");
-    el.innerHTML=`
-      <div class="list-main">
-        <strong>${escapeHTML(p.name)}</strong>
-        <small>${done?"Finalizada hoje":"Pendente"}</small>
-      </div>
-      <button class="status" data-prayer="${p.id}">${done?"✓":"Abrir"}</button>
-    `;
-    root.appendChild(el);
-  });
-  root.querySelectorAll("[data-prayer]").forEach(btn=>{
-    btn.addEventListener("click",()=>openPrayer(btn.dataset.prayer));
-  });
-}
-
-function renderTasks(){
-  const root=document.getElementById("taskList");
-  root.innerHTML="";
-  const tasks=state.tasks.filter(t=>!t.archived);
-  if(!tasks.length){
-    root.innerHTML='<p class="empty">Nenhuma tarefa cadastrada.</p>';
-    return;
-  }
-  tasks.forEach(t=>{
-    const done=isTaskDone(t.id);
-    const el=document.createElement("article");
-    el.className="list-item"+(done?" done":"");
-    el.innerHTML=`
-      <div class="list-main"><strong>${escapeHTML(t.name)}</strong><small>${done?"Concluída":"Pendente"}</small></div>
-      <button class="status" data-task="${t.id}">${done?"✓":"Concluir"}</button>
-    `;
-    root.appendChild(el);
-  });
-  root.querySelectorAll("[data-task]").forEach(btn=>{
-    btn.addEventListener("click",()=>toggleCompletion("task",btn.dataset.task));
-  });
-}
-
-function renderStats(){
-  const habits=habitsForToday();
-  const prayers=state.prayers.filter(p=>!p.archived);
-  const tasks=state.tasks.filter(t=>!t.archived);
-  const hc=habits.filter(h=>isHabitDone(h.id)).length;
-  const pc=prayers.filter(p=>isPrayerDone(p.id)).length;
-  const tc=tasks.filter(t=>isTaskDone(t.id)).length;
-  const total=habits.length+prayers.length+tasks.length;
-  const done=hc+pc+tc;
-  const pct=total?Math.round(done/total*100):0;
-
-  document.getElementById("habitSummary").textContent=`${hc} de ${habits.length}`;
-  document.getElementById("prayerSummary").textContent=`${pc} de ${prayers.length}`;
-  document.getElementById("taskSummary").textContent=`${tasks.length-tc} pendentes`;
-  document.getElementById("statHabits").textContent=`${hc}/${habits.length}`;
-  document.getElementById("statPrayers").textContent=`${pc}/${prayers.length}`;
-  document.getElementById("statTasks").textContent=`${tc}/${tasks.length}`;
-  document.getElementById("overallPercent").textContent=`${pct}%`;
-  document.getElementById("overallBar").style.width=`${pct}%`;
-
-  const pending=[
-    ...habits.filter(h=>!isHabitDone(h.id)).map(h=>`Hábito: ${h.name}`),
-    ...prayers.filter(p=>!isPrayerDone(p.id)).map(p=>`Oração: ${p.name}`),
-    ...tasks.filter(t=>!isTaskDone(t.id)).map(t=>`Tarefa: ${t.name}`)
-  ];
-  document.getElementById("pendingList").innerHTML=pending.length
-    ? pending.slice(0,8).map(x=>`<li>${escapeHTML(x)}</li>`).join("")
-    : "<li>Nenhuma pendência 🎉</li>";
-}
-
-function renderAll(){
-  renderHabits();renderPrayers();renderTasks();renderStats();
-}
-
-function goTo(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
-  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.target===id));
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-document.querySelectorAll(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>goTo(btn.dataset.target)));
-document.querySelectorAll("[data-go]").forEach(btn=>btn.addEventListener("click",()=>goTo(btn.dataset.go)));
-
-document.querySelectorAll("[data-habit-view]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    habitView=btn.dataset.habitView;
-    document.querySelectorAll("[data-habit-view]").forEach(b=>b.classList.toggle("active",b===btn));
-    renderHabits();
-  });
-});
-
-const createDialog=document.getElementById("createDialog");
-document.getElementById("createBtn").onclick=()=>createDialog.showModal();
-document.querySelectorAll("[data-action]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    if(createDialog.open) createDialog.close();
-    if(btn.dataset.action==="habit") openHabitForm();
-    else openSimpleForm(btn.dataset.action);
-  });
-});
-
-function updateFrequencyFields(){
-  const t=document.getElementById("habitFrequency").value;
-  ["weeklyFields","monthlyFields","yearlyFields","dateFields","rangeFields"].forEach(id=>document.getElementById(id).classList.add("hidden"));
-  const map={weekly:"weeklyFields",monthly:"monthlyFields",yearly:"yearlyFields",date:"dateFields",range:"rangeFields"};
-  if(map[t]) document.getElementById(map[t]).classList.remove("hidden");
-}
-document.getElementById("habitFrequency").addEventListener("change",updateFrequencyFields);
-
-function openHabitForm(habit=null){
-  document.getElementById("habitFormTitle").textContent=habit?"Editar hábito":"Novo hábito";
-  document.getElementById("habitId").value=habit?.id || "";
-  document.getElementById("habitName").value=habit?.name || "";
-  document.getElementById("habitIcon").value=habit?.icon || "📖";
-  document.getElementById("habitCategory").value=habit?.category || "Espiritual";
-  document.getElementById("habitTime").value=habit?.time || "";
-  const f=habit?.frequency || {type:"daily"};
-  document.getElementById("habitFrequency").value=f.type || "daily";
-  document.querySelectorAll('#weeklyFields input[type="checkbox"]').forEach(c=>c.checked=(f.weekdays||[]).includes(Number(c.value)));
-  document.getElementById("habitMonthDay").value=f.day || 1;
-  document.getElementById("habitYearDate").value=f.date || "";
-  document.getElementById("habitDate").value=f.date || "";
-  document.getElementById("habitStartDate").value=f.start || "";
-  document.getElementById("habitEndDate").value=f.end || "";
-  updateFrequencyFields();
-  document.getElementById("habitDialog").showModal();
-}
-document.getElementById("cancelHabit").onclick=()=>document.getElementById("habitDialog").close();
-
-document.getElementById("habitForm").addEventListener("submit",e=>{
-  e.preventDefault();
-  const id=document.getElementById("habitId").value;
-  const type=document.getElementById("habitFrequency").value;
-  let frequency={type};
-  if(type==="weekly"){
-    frequency.weekdays=[...document.querySelectorAll('#weeklyFields input[type="checkbox"]:checked')].map(x=>Number(x.value));
-    if(!frequency.weekdays.length){ alert("Escolha pelo menos um dia da semana."); return; }
-  }
-  if(type==="monthly") frequency.day=Number(document.getElementById("habitMonthDay").value);
-  if(type==="yearly") frequency.date=document.getElementById("habitYearDate").value;
-  if(type==="date") frequency.date=document.getElementById("habitDate").value;
-  if(type==="range"){
-    frequency.start=document.getElementById("habitStartDate").value;
-    frequency.end=document.getElementById("habitEndDate").value;
-    if(!frequency.start || !frequency.end || frequency.end<frequency.start){ alert("Confira o intervalo de datas."); return; }
-  }
-  if((type==="yearly" || type==="date") && !frequency.date){ alert("Escolha a data."); return; }
-
-  const data={
-    id:id || crypto.randomUUID(),
-    name:document.getElementById("habitName").value.trim(),
-    icon:document.getElementById("habitIcon").value,
-    category:document.getElementById("habitCategory").value,
-    time:document.getElementById("habitTime").value,
-    frequency,
-    archived:false,
-    createdAt:id ? (state.habits.find(h=>h.id===id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
-  };
-  if(id){
-    const idx=state.habits.findIndex(h=>h.id===id);
-    state.habits[idx]=data;
-  }else state.habits.push(data);
-
-  save();
-  document.getElementById("habitDialog").close();
-});
-
-function monthHabitStats(habit){
-  const now=new Date();
-  const year=now.getFullYear(), month=now.getMonth();
-  const days=new Date(year,month+1,0).getDate();
-  let expected=0, done=0;
-  for(let d=1;d<=Math.min(days,now.getDate());d++){
-    const date=new Date(year,month,d,12);
-    if(isHabitScheduledOn(habit,date)){
-      expected++;
-      if(isHabitDone(habit.id,todayKey(date))) done++;
-    }
-  }
-  return {expected,done};
-}
-
-function openHabitDetail(id){
-  activeHabitId=id;
-  const h=state.habits.find(x=>x.id===id);
-  if(!h) return;
-  const st=monthHabitStats(h);
-  document.getElementById("habitDetailIcon").textContent=h.icon || "⭐";
-  document.getElementById("habitDetailName").textContent=h.name;
-  document.getElementById("habitDetailMeta").textContent=[h.category,frequencyLabel(h),h.time].filter(Boolean).join(" • ");
-  document.getElementById("habitMonthDone").textContent=st.done;
-  document.getElementById("habitMonthExpected").textContent=st.expected;
-  document.getElementById("habitDetailDialog").showModal();
-}
-document.getElementById("closeHabitDetail").onclick=()=>document.getElementById("habitDetailDialog").close();
-document.getElementById("editHabit").onclick=()=>{
-  const h=state.habits.find(x=>x.id===activeHabitId);
-  document.getElementById("habitDetailDialog").close();
-  openHabitForm(h);
-};
-document.getElementById("archiveHabit").onclick=()=>{
-  const h=state.habits.find(x=>x.id===activeHabitId);
-  if(h && confirm(`Arquivar "${h.name}"? O histórico será mantido.`)){
-    h.archived=true;
-    save();
-    document.getElementById("habitDetailDialog").close();
-  }
-};
-
-function openSimpleForm(type){
-  document.getElementById("simpleType").value=type;
-  document.getElementById("simpleFormTitle").textContent=type==="prayer"?"Nova oração":"Nova tarefa";
-  document.getElementById("simpleName").value="";
-  document.getElementById("simpleText").value="";
-  document.getElementById("simpleTextWrap").classList.toggle("hidden",type!=="prayer");
-  document.getElementById("simpleFormDialog").showModal();
-}
-document.getElementById("cancelSimple").onclick=()=>document.getElementById("simpleFormDialog").close();
-document.getElementById("simpleForm").addEventListener("submit",e=>{
-  e.preventDefault();
-  const type=document.getElementById("simpleType").value;
-  const name=document.getElementById("simpleName").value.trim();
-  if(!name) return;
-  if(type==="prayer") state.prayers.push({id:crypto.randomUUID(),name,text:document.getElementById("simpleText").value.trim(),archived:false});
-  else state.tasks.push({id:crypto.randomUUID(),name,archived:false});
-  save();
-  document.getElementById("simpleFormDialog").close();
-});
-
-function openPrayer(id){
-  const p=state.prayers.find(x=>x.id===id);
-  document.getElementById("prayerTitle").textContent=p.name;
-  document.getElementById("prayerText").textContent=p.text || "Sem texto cadastrado.";
-  const finish=document.getElementById("finishPrayer");
-  finish.textContent=isPrayerDone(id)?"Desmarcar finalização":"Marcar como finalizada";
-  finish.onclick=()=>{toggleCompletion("prayer",id);document.getElementById("prayerDialog").close();};
-  document.getElementById("prayerDialog").showModal();
-}
-document.getElementById("closePrayer").onclick=()=>document.getElementById("prayerDialog").close();
-
-function escapeHTML(str=""){
-  return String(str).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-}
-
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-}
+const K="isa_app_data_v03",K2="isa_app_data_v02";
+function dk(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function pd(s){if(!s)return null;let[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c,12)}
+function blank(){return{version:3,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{}}}
+function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K2);if(old)try{let o=JSON.parse(old);s={...s,...o,version:3};s.prayers=(s.prayers||[]).map(p=>({...p,time:p.time||"",frequency:p.frequency||{type:"daily"}}))}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
+let S=load(),habitView="today",prayerView="today",activeHabit=null,activePrayer=null;
+function save(){localStorage.setItem(K,JSON.stringify(S));renderAll()}
+function key(id,date=dk()){return `${id}|${date}`}
+function done(map,id,date=dk()){return !!map[key(id,date)]}
+function toggle(map,id){let k=key(id);map[k]?delete map[k]:map[k]=true;save()}
+function sched(item,date){if(item.archived)return false;let f=item.frequency||{type:"daily"},x=dk(date);if(f.type==="daily")return true;if(f.type==="weekly")return(f.weekdays||[]).includes(date.getDay());if(f.type==="monthly")return date.getDate()===Number(f.day||1);if(f.type==="yearly"){let d=pd(f.date);return d&&d.getDate()===date.getDate()&&d.getMonth()===date.getMonth()}if(f.type==="date")return f.date===x;if(f.type==="range")return f.start&&f.end&&x>=f.start&&x<=f.end;return true}
+function todayHabits(){let n=new Date();return S.habits.filter(h=>sched(h,n))}
+function todayPrayers(){let n=new Date();return S.prayers.filter(p=>sched(p,n))}
+function fdate(){return new Intl.DateTimeFormat("pt-BR",{weekday:"long",day:"2-digit",month:"long"}).format(new Date())}
+todayText.textContent=fdate();agendaDate.textContent=fdate();
+function esc(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function flabel(i){let f=i.frequency||{type:"daily"};if(f.type==="daily")return"Todos os dias";if(f.type==="weekly"){let n=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];return(f.weekdays||[]).map(x=>n[x]).join(", ")}if(f.type==="monthly")return`Todo dia ${f.day}`;if(f.type==="yearly"){let d=pd(f.date);return d?`Todo ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`:"Anual"}if(f.type==="date")return`Em ${short(f.date)}`;if(f.type==="range")return`${short(f.start)} a ${short(f.end)}`;return""}
+function short(s){let d=pd(s);return d?new Intl.DateTimeFormat("pt-BR").format(d):""}
+function renderHabits(){let a=habitView==="today"?todayHabits():S.habits.filter(h=>!h.archived),r=habitList;r.innerHTML="";habitEmpty.classList.toggle("hidden",a.length>0);a.forEach(h=>{let z=done(S.habitCompletions,h.id),e=document.createElement("article");e.className="item-card"+(z?" done":"");e.innerHTML=`<div class="item-top"><span class="item-icon">${h.icon||"⭐"}</span>${h.time?`<span class="item-time">${h.time}</span>`:""}</div><div><button class="item-title" data-hd="${h.id}">${esc(h.name)}</button><div class="item-category">${esc(h.category||"")}</div></div>${habitView==="today"?`<button class="check ${z?"done":""}" data-h="${h.id}">${z?"✓":""}</button>`:""}`;r.appendChild(e)});r.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>toggle(S.habitCompletions,b.dataset.h));r.querySelectorAll("[data-hd]").forEach(b=>b.onclick=()=>openHabit(b.dataset.hd))}
+function renderPrayers(){let a=prayerView==="today"?todayPrayers():S.prayers.filter(p=>!p.archived),r=prayerList;r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma oração nesta seção.</p>';return}a.forEach(p=>{let z=done(S.prayerCompletions,p.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(flabel(p))}${p.time?` • ${p.time}`:""}${z?" • Finalizada hoje":""}</small></div><button class="status" data-p="${p.id}">${z?"✓":"Abrir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openPrayer(b.dataset.p))}
+function renderTasks(){let a=S.tasks.filter(t=>!t.archived),r=taskList;r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma tarefa cadastrada.</p>';return}a.forEach(t=>{let z=done(S.taskCompletions,t.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(t.name)}</strong><small>${z?"Concluída":"Pendente"}</small></div><button class="status" data-t="${t.id}">${z?"✓":"Concluir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>toggle(S.taskCompletions,b.dataset.t))}
+function renderStats(){let h=todayHabits(),p=todayPrayers(),t=S.tasks.filter(x=>!x.archived),hc=h.filter(x=>done(S.habitCompletions,x.id)).length,pc=p.filter(x=>done(S.prayerCompletions,x.id)).length,tc=t.filter(x=>done(S.taskCompletions,x.id)).length,total=h.length+p.length+t.length,n=hc+pc+tc,pct=total?Math.round(n/total*100):0;habitSummary.textContent=`${hc} de ${h.length}`;prayerSummary.textContent=`${pc} de ${p.length}`;taskSummary.textContent=`${t.length-tc} pendentes`;statHabits.textContent=`${hc}/${h.length}`;statPrayers.textContent=`${pc}/${p.length}`;statTasks.textContent=`${tc}/${t.length}`;overallPercent.textContent=`${pct}%`;overallBar.style.width=`${pct}%`;let pend=[...h.filter(x=>!done(S.habitCompletions,x.id)).map(x=>`Hábito: ${x.name}`),...p.filter(x=>!done(S.prayerCompletions,x.id)).map(x=>`Oração: ${x.name}`),...t.filter(x=>!done(S.taskCompletions,x.id)).map(x=>`Tarefa: ${x.name}`)];pendingList.innerHTML=pend.length?pend.slice(0,8).map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Nenhuma pendência 🎉</li>"}
+function renderAll(){renderHabits();renderPrayers();renderTasks();renderStats()}
+document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>go(b.dataset.target));document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));function go(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.target===id));scrollTo({top:0,behavior:"smooth"})}
+document.querySelectorAll("[data-habit-view]").forEach(b=>b.onclick=()=>{habitView=b.dataset.habitView;document.querySelectorAll("[data-habit-view]").forEach(x=>x.classList.toggle("active",x===b));renderHabits()});
+document.querySelectorAll("[data-prayer-view]").forEach(b=>b.onclick=()=>{prayerView=b.dataset.prayerView;document.querySelectorAll("[data-prayer-view]").forEach(x=>x.classList.toggle("active",x===b));renderPrayers()});
+createBtn.onclick=()=>createDialog.showModal();document.querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>{if(createDialog.open)createDialog.close();b.dataset.action==="habit"?openHabitForm():b.dataset.action==="prayer"?openPrayerForm():taskDialog.showModal()});
+function freqUI(prefix){let t=document.getElementById(prefix+"Frequency").value,map={weekly:"Weekly",monthly:"Monthly",yearly:"Yearly",date:"DateBox",range:"Range"};["Weekly","Monthly","Yearly","DateBox","Range"].forEach(x=>document.getElementById(prefix+x).classList.add("hidden"));if(map[t])document.getElementById(prefix+map[t]).classList.remove("hidden")}
+habitFrequency.onchange=()=>freqUI("habit");prayerFrequency.onchange=()=>freqUI("prayer");
+function readFreq(prefix){let t=document.getElementById(prefix+"Frequency").value,f={type:t};if(t==="weekly"){f.weekdays=[...document.querySelectorAll(`#${prefix}Weekly input:checked`)].map(x=>Number(x.value));if(!f.weekdays.length)throw"Escolha pelo menos um dia."}if(t==="monthly")f.day=Number(document.getElementById(prefix+"MonthDay").value);if(t==="yearly")f.date=document.getElementById(prefix+"YearDate").value;if(t==="date")f.date=document.getElementById(prefix+"Date").value;if(t==="range"){f.start=document.getElementById(prefix+"StartDate").value;f.end=document.getElementById(prefix+"EndDate").value;if(!f.start||!f.end||f.end<f.start)throw"Confira o intervalo."}if((t==="yearly"||t==="date")&&!f.date)throw"Escolha a data.";return f}
+function fillFreq(prefix,f={type:"daily"}){document.getElementById(prefix+"Frequency").value=f.type||"daily";document.querySelectorAll(`#${prefix}Weekly input`).forEach(c=>c.checked=(f.weekdays||[]).includes(Number(c.value)));document.getElementById(prefix+"MonthDay").value=f.day||1;document.getElementById(prefix+"YearDate").value=f.date||"";document.getElementById(prefix+"Date").value=f.date||"";document.getElementById(prefix+"StartDate").value=f.start||"";document.getElementById(prefix+"EndDate").value=f.end||"";freqUI(prefix)}
+function openHabitForm(h=null){habitFormTitle.textContent=h?"Editar hábito":"Novo hábito";habitId.value=h?.id||"";habitName.value=h?.name||"";habitIcon.value=h?.icon||"📖";habitCategory.value=h?.category||"Espiritual";habitTime.value=h?.time||"";fillFreq("habit",h?.frequency);habitDialog.showModal()}
+cancelHabit.onclick=()=>habitDialog.close();habitForm.onsubmit=e=>{e.preventDefault();try{let id=habitId.value,o={id:id||crypto.randomUUID(),name:habitName.value.trim(),icon:habitIcon.value,category:habitCategory.value,time:habitTime.value,frequency:readFreq("habit"),archived:false};if(id)S.habits[S.habits.findIndex(x=>x.id===id)]={...S.habits.find(x=>x.id===id),...o};else S.habits.push(o);save();habitDialog.close()}catch(m){alert(m)}}
+function openPrayerForm(p=null){prayerFormTitle.textContent=p?"Editar oração":"Nova oração";prayerId.value=p?.id||"";prayerName.value=p?.name||"";prayerBody.value=p?.text||"";prayerTime.value=p?.time||"";fillFreq("prayer",p?.frequency);prayerFormDialog.showModal()}
+cancelPrayerForm.onclick=()=>prayerFormDialog.close();prayerForm.onsubmit=e=>{e.preventDefault();try{let id=prayerId.value,o={id:id||crypto.randomUUID(),name:prayerName.value.trim(),text:prayerBody.value,time:prayerTime.value,frequency:readFreq("prayer"),archived:false};if(id)S.prayers[S.prayers.findIndex(x=>x.id===id)]={...S.prayers.find(x=>x.id===id),...o};else S.prayers.push(o);save();prayerFormDialog.close()}catch(m){alert(m)}}
+taskForm.onsubmit=e=>{e.preventDefault();S.tasks.push({id:crypto.randomUUID(),name:taskName.value.trim(),archived:false});save();taskDialog.close()};cancelTask.onclick=()=>taskDialog.close();
+function monthStats(item,map){let n=new Date(),y=n.getFullYear(),m=n.getMonth(),exp=0,dn=0;for(let d=1;d<=n.getDate();d++){let z=new Date(y,m,d,12);if(sched(item,z)){exp++;if(done(map,item.id,dk(z)))dn++}}return{exp,dn}}
+function openHabit(id){activeHabit=id;let h=S.habits.find(x=>x.id===id),st=monthStats(h,S.habitCompletions);habitDetailIcon.textContent=h.icon||"⭐";habitDetailName.textContent=h.name;habitDetailMeta.textContent=[h.category,flabel(h),h.time].filter(Boolean).join(" • ");habitMonthDone.textContent=st.dn;habitMonthExpected.textContent=st.exp;habitDetailDialog.showModal()}
+editHabit.onclick=()=>{let h=S.habits.find(x=>x.id===activeHabit);habitDetailDialog.close();openHabitForm(h)};archiveHabit.onclick=()=>{let h=S.habits.find(x=>x.id===activeHabit);if(confirm(`Arquivar "${h.name}"?`)){h.archived=true;save();habitDetailDialog.close()}};habitItemHistory.onclick=()=>showItemHistory("habit",activeHabit);closeHabitDetail.onclick=()=>habitDetailDialog.close();
+function openPrayer(id){activePrayer=id;let p=S.prayers.find(x=>x.id===id);prayerTitle.textContent=p.name;prayerMeta.textContent=[flabel(p),p.time].filter(Boolean).join(" • ");prayerText.textContent=p.text||"Sem texto cadastrado.";finishPrayer.textContent=done(S.prayerCompletions,id)?"Desmarcar finalização":"Marcar como finalizada";prayerDetailDialog.showModal()}
+finishPrayer.onclick=()=>{toggle(S.prayerCompletions,activePrayer);prayerDetailDialog.close()};editPrayer.onclick=()=>{let p=S.prayers.find(x=>x.id===activePrayer);prayerDetailDialog.close();openPrayerForm(p)};archivePrayer.onclick=()=>{let p=S.prayers.find(x=>x.id===activePrayer);if(confirm(`Arquivar "${p.name}"?`)){p.archived=true;save();prayerDetailDialog.close()}};prayerItemHistory.onclick=()=>showItemHistory("prayer",activePrayer);closePrayer.onclick=()=>prayerDetailDialog.close();
+function historyRows(type,id=null){let map=type==="habit"?S.habitCompletions:S.prayerCompletions,items=type==="habit"?S.habits:S.prayers,rows=[];for(let k in map){let [iid,date]=k.split("|");if(id&&iid!==id)continue;let item=items.find(x=>x.id===iid);if(item)rows.push({date,name:item.name})}return rows.sort((a,b)=>b.date.localeCompare(a.date))}
+function showItemHistory(type,id){historyTitle.textContent=type==="habit"?"Histórico do hábito":"Histórico da oração";let rows=historyRows(type,id);historyContent.innerHTML=rows.length?rows.map(r=>`<div class="history-row done"><span>${esc(r.name)}</span><strong>${short(r.date)}</strong></div>`).join(""):'<p class="empty">Ainda não há registros.</p>';historyDialog.showModal()}
+habitHistoryBtn.onclick=()=>{historyTitle.textContent="Histórico de hábitos";let r=historyRows("habit");historyContent.innerHTML=r.length?r.map(x=>`<div class="history-row done"><span>${esc(x.name)}</span><strong>${short(x.date)}</strong></div>`).join(""):'<p class="empty">Ainda não há registros.</p>';historyDialog.showModal()}
+prayerHistoryBtn.onclick=()=>{historyTitle.textContent="Histórico de orações";let r=historyRows("prayer");historyContent.innerHTML=r.length?r.map(x=>`<div class="history-row done"><span>${esc(x.name)}</span><strong>${short(x.date)}</strong></div>`).join(""):'<p class="empty">Ainda não há registros.</p>';historyDialog.showModal()}
+closeHistory.onclick=()=>historyDialog.close();
+function showArchived(type){let a=(type==="habit"?S.habits:S.prayers).filter(x=>x.archived);archiveTitle.textContent=type==="habit"?"Hábitos arquivados":"Orações arquivadas";archiveContent.innerHTML=a.length?a.map(x=>`<div class="list-item"><div class="list-main"><strong>${esc(x.name)}</strong></div><div class="archive-actions"><button data-restore="${x.id}" data-type="${type}">Restaurar</button></div></div>`).join(""):'<p class="empty">Nenhum item arquivado.</p>';archiveContent.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{let arr=b.dataset.type==="habit"?S.habits:S.prayers,item=arr.find(x=>x.id===b.dataset.restore);item.archived=false;save();showArchived(b.dataset.type)});archiveDialog.showModal()}
+habitArchivedBtn.onclick=()=>showArchived("habit");prayerArchivedBtn.onclick=()=>showArchived("prayer");closeArchive.onclick=()=>archiveDialog.close();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();
