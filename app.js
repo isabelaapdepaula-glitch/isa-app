@@ -1,8 +1,8 @@
-const K="isa_app_data_v11",K10="isa_app_data_v10";
+const K="isa_app_data_v12",K11="isa_app_data_v11";
 function dk(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function pd(s){if(!s)return null;let[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c,12)}
-function blank(){return{version:11,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[],reviews:{},customCategories:[]}}
-function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K10);if(old)try{let o=JSON.parse(old);s={...s,...o,version:11,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
+function blank(){return{version:12,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[],reviews:{},customCategories:[],profilePhoto:""}}
+function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K11);if(old)try{let o=JSON.parse(old);s={...s,...o,version:12,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
 let S=load(),habitView="today",prayerView="today",taskView="today",routineFilter="today",activeHabit=null,activePrayer=null,calendarDate=new Date(),selectedDate=new Date();
 function save(){localStorage.setItem(K,JSON.stringify(S));renderAll()}
 function key(id,date=dk()){return `${id}|${date}`} function done(map,id,date=dk()){return !!map[key(id,date)]}
@@ -311,7 +311,7 @@ closeSettingsBtn.onclick=()=>go("home");
 exportBackupBtn.onclick=()=>{
   const payload={
     app:"ISA",
-    version:11,
+    version:12,
     exportedAt:new Date().toISOString(),
     data:S
   };
@@ -332,7 +332,7 @@ importBackupInput.addEventListener("change",async e=>{
     const incoming=payload.data||payload;
     if(!incoming.habits||!incoming.prayers||!incoming.tasks) throw new Error("Arquivo inválido");
     if(!confirm("Restaurar este backup? Os dados atuais serão substituídos.")) return;
-    S={...blank(),...incoming,version:11,reviews:incoming.reviews||{}};
+    S={...blank(),...incoming,version:12,reviews:incoming.reviews||{}};
     save();
     renderSettings();
     backupStatus.textContent="Backup restaurado com sucesso.";
@@ -418,6 +418,89 @@ renderSettings=function(){
 };
 
 syncAllCategorySelects();
+
+
+
+/* ---------- v1.2 profile photo ---------- */
+if(typeof S.profilePhoto==="undefined") S.profilePhoto="";
+
+function renderProfilePhoto(){
+  document.querySelectorAll(".avatar-slot").forEach(el=>{
+    if(S.profilePhoto){
+      el.classList.add("has-photo");
+      el.style.backgroundImage=`url(${JSON.stringify("")})`; // placeholder overwritten below
+      el.style.backgroundImage='url("'+S.profilePhoto.replace(/"/g,'\\"')+'")';
+    }else{
+      el.classList.remove("has-photo");
+      el.style.backgroundImage="";
+    }
+  });
+}
+
+async function compressProfilePhoto(file){
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error("read"));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error("img"));
+      img.onload=()=>{
+        const max=320;
+        let w=img.width,h=img.height;
+        if(w>h){ if(w>max){ h=Math.round(h*max/w); w=max; } }
+        else { if(h>max){ w=Math.round(w*max/h); h=max; } }
+        const canvas=document.createElement("canvas");
+        canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext("2d");
+        ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/jpeg",0.86));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+profilePhotoInput?.addEventListener("change", async e=>{
+  const file=e.target.files?.[0];
+  if(!file) return;
+  try{
+    const data=await compressProfilePhoto(file);
+    S.profilePhoto=data;
+    save();
+    renderProfilePhoto();
+    renderSettings?.();
+    alert("Foto atualizada.");
+  }catch(err){
+    alert("Não foi possível carregar essa foto.");
+  }finally{
+    e.target.value="";
+  }
+});
+
+removeProfilePhotoBtn?.addEventListener("click", ()=>{
+  if(!S.profilePhoto){ alert("Nenhuma foto cadastrada."); return; }
+  if(confirm("Remover a foto do perfil?")){
+    S.profilePhoto="";
+    save();
+    renderProfilePhoto();
+    renderSettings?.();
+  }
+});
+
+const oldRenderSettingsV12 = renderSettings;
+renderSettings = function(){
+  oldRenderSettingsV12();
+  renderProfilePhoto();
+};
+
+const oldRenderAllV12 = renderAll;
+renderAll = function(){
+  oldRenderAllV12();
+  renderProfilePhoto();
+};
+
+renderProfilePhoto();
 
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();

@@ -14,7 +14,7 @@
 <body>
 <main id="app">
 <section class="screen active" id="home">
-<header class="hero"><div><h1>Olá Isa!</h1><p id="todayText"></p></div><div class="avatar">☁︎</div></header>
+<header class="hero"><div><h1>Olá Isa!</h1><p id="todayText"></p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 <button class="primary-btn" id="createBtn">＋ Criar novo</button>
 <div class="home-shortcuts">
   <button class="shortcut-card" id="openReviewBtn"><span>✦</span><div><strong>Retrospectiva do mês</strong><small>Favoritos, exame de consciência e resumo</small></div></button>
@@ -39,7 +39,7 @@
 </section>
 
 <section class="screen" id="habits">
-<header class="page-head"><div><h1>Meus hábitos</h1><p>de hoje</p></div><div class="avatar">☁︎</div></header>
+<header class="page-head"><div><h1>Meus hábitos</h1><p>de hoje</p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 <div class="toolbar-grid"><button class="pill active" data-habit-view="today">Hoje</button><button class="pill" data-habit-view="all">Todos</button><button class="pill" id="habitHistoryBtn">Histórico</button><button class="pill" id="habitArchivedBtn">Arquivados</button></div>
 <p class="manage-hint hidden" id="habitManageHint">Na aba “Todos”, use ↑ e ↓ para reorganizar.</p>
 <div class="items-grid" id="habitList"></div><p id="habitEmpty" class="empty hidden">Nenhum hábito nesta seção.</p>
@@ -47,7 +47,7 @@
 </section>
 
 <section class="screen" id="prayers">
-<header class="page-head"><div><h1>Minhas orações</h1><p>de hoje</p></div><div class="avatar">☁︎</div></header>
+<header class="page-head"><div><h1>Minhas orações</h1><p>de hoje</p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 <div class="toolbar-grid"><button class="pill active" data-prayer-view="today">Hoje</button><button class="pill" data-prayer-view="all">Todas</button><button class="pill" id="prayerHistoryBtn">Histórico</button><button class="pill" id="prayerArchivedBtn">Arquivadas</button></div>
 <p class="manage-hint hidden" id="prayerManageHint">Na aba “Todas”, use ↑ e ↓ para reorganizar.</p>
 <input class="search-input" id="prayerSearch" placeholder="Buscar oração..." />
@@ -56,7 +56,7 @@
 </section>
 
 <section class="screen" id="agenda">
-<header class="page-head"><div><h1>Minha agenda</h1><p id="agendaDate"></p></div><div class="avatar">☁︎</div></header>
+<header class="page-head"><div><h1>Minha agenda</h1><p id="agendaDate"></p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 
 <div class="agenda-switch">
 <button class="pill active" data-agenda-mode="day">Dia</button>
@@ -100,7 +100,7 @@
 </section>
 
 <section class="screen" id="statistics">
-<header class="page-head"><div><h1>Estatísticas</h1><p>seu progresso</p></div><div class="avatar">☁︎</div></header>
+<header class="page-head"><div><h1>Estatísticas</h1><p>seu progresso</p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 
 <div class="agenda-switch">
 <button class="pill active" data-stats-mode="today">Hoje</button>
@@ -137,7 +137,7 @@
 
 
 <section class="screen" id="review">
-<header class="page-head"><div><h1>Retrospectiva</h1><p id="reviewMonthLabel"></p></div><div class="avatar">✦</div></header>
+<header class="page-head"><div><h1>Retrospectiva</h1><p id="reviewMonthLabel"></p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 
 <section class="card stats-highlight">
 <span>Seu mês em números</span>
@@ -205,7 +205,7 @@
 </section>
 
 <section class="screen" id="annualReview">
-<header class="page-head"><div><h1>Meu ano</h1><p id="annualYearLabel"></p></div><div class="avatar">✦</div></header>
+<header class="page-head"><div><h1>Meu ano</h1><p id="annualYearLabel"></p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
 
 <section class="card stats-highlight">
 <span>Progresso do ano</span>
@@ -239,7 +239,19 @@
 </section>
 
 <section class="screen" id="settings">
-<header class="page-head"><div><h1>Configurações</h1><p>seus dados</p></div><div class="avatar">⚙︎</div></header>
+<header class="page-head"><div><h1>Configurações</h1><p>seus dados</p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
+
+<section class="card">
+<h2>Foto do perfil</h2>
+<div class="profile-card">
+  <div class="profile-preview avatar-slot large-avatar" id="settingsAvatarPreview" aria-label="Prévia da foto do perfil"></div>
+  <div class="profile-actions">
+    <label class="setting-btn file-label">Escolher foto<input type="file" id="profilePhotoInput" accept="image/*"></label>
+    <button class="setting-btn" id="removeProfilePhotoBtn">Remover foto</button>
+    <small>A foto aparece no topo do app e fica salva no seu iPhone.</small>
+  </div>
+</div>
+</section>
 
 <section class="card">
 <h2>Backup</h2>
