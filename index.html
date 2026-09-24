@@ -22,7 +22,7 @@
 <button class="quick-card" data-go="prayers"><span class="line-icon">♱</span><strong>Orações</strong><small id="prayerSummary">0 de 0</small></button>
 <button class="quick-card" data-go="agenda"><span class="line-icon">✓</span><strong>Agenda</strong><small id="taskSummary">0 pendentes</small></button>
 </section>
-<section class="card">
+<section class="card clickable-card" id="openStatsBtn">
 <h2>Estatísticas de hoje</h2>
 <div class="progress-row"><div><span>Progresso geral</span><strong id="overallPercent">0%</strong></div><div class="progress"><div id="overallBar"></div></div></div>
 <div class="mini-stats"><span>Hábitos <b id="statHabits">0/0</b></span><span>Orações <b id="statPrayers">0/0</b></span><span>Tarefas <b id="statTasks">0/0</b></span></div>
@@ -91,6 +91,43 @@
 
 <button class="fab" data-action="task">＋</button>
 </section>
+
+<section class="screen" id="statistics">
+<header class="page-head"><div><h1>Estatísticas</h1><p>seu progresso</p></div><div class="avatar">☁︎</div></header>
+
+<div class="agenda-switch">
+<button class="pill active" data-stats-mode="today">Hoje</button>
+<button class="pill" data-stats-mode="week">Semana</button>
+<button class="pill" data-stats-mode="month">Mês</button>
+<button class="pill" data-stats-mode="year">Ano</button>
+</div>
+
+<section class="card stats-highlight">
+<span id="statsPeriodLabel">Hoje</span>
+<strong id="statsOverallBig">0%</strong>
+<small>concluído</small>
+<div class="progress big-progress"><div id="statsOverallBar"></div></div>
+</section>
+
+<div class="stats-cards">
+<section class="mini-card"><span>Hábitos</span><strong id="statsHabitValue">0/0</strong><small id="statsHabitPercent">0%</small></section>
+<section class="mini-card"><span>Orações</span><strong id="statsPrayerValue">0/0</strong><small id="statsPrayerPercent">0%</small></section>
+<section class="mini-card"><span>Tarefas</span><strong id="statsTaskValue">0/0</strong><small id="statsTaskPercent">0%</small></section>
+</div>
+
+<section class="card">
+<h2>Hábitos</h2>
+<div id="habitStatsList" class="bar-list"></div>
+</section>
+
+<section class="card">
+<h2>Visão por dia</h2>
+<div id="dailyStatsList" class="daily-bars"></div>
+</section>
+
+<button class="back-stats" id="closeStatsBtn">← Voltar para o início</button>
+</section>
+
 </main>
 
 <nav class="bottom-nav">

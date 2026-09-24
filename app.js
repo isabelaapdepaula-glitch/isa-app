@@ -1,8 +1,8 @@
-const K="isa_app_data_v06",K5="isa_app_data_v05";
+const K="isa_app_data_v07",K6="isa_app_data_v06";
 function dk(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function pd(s){if(!s)return null;let[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c,12)}
-function blank(){return{version:6,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[]}}
-function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K5);if(old)try{let o=JSON.parse(old);s={...s,...o,version:6,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
+function blank(){return{version:7,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[]}}
+function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K6);if(old)try{let o=JSON.parse(old);s={...s,...o,version:7,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
 let S=load(),habitView="today",prayerView="today",taskView="today",routineFilter="today",activeHabit=null,activePrayer=null,calendarDate=new Date(),selectedDate=new Date();
 function save(){localStorage.setItem(K,JSON.stringify(S));renderAll()}
 function key(id,date=dk()){return `${id}|${date}`} function done(map,id,date=dk()){return !!map[key(id,date)]}
@@ -62,6 +62,143 @@ function openHabit(id){activeHabit=id;let h=S.habits.find(x=>x.id===id);habitDet
 function openPrayer(id){activePrayer=id;let p=S.prayers.find(x=>x.id===id);prayerTitle.textContent=p.name;prayerMeta.textContent=[flabel(p),p.time].filter(Boolean).join(" • ");prayerText.innerHTML=p.html||esc(p.text||"Sem texto cadastrado.").replace(/\n/g,"<br>");finishPrayer.textContent=done(S.prayerCompletions,id)?"Desmarcar finalização":"Marcar como finalizada";prayerDetailDialog.showModal()}finishPrayer.onclick=()=>{toggle(S.prayerCompletions,activePrayer);prayerDetailDialog.close()};editPrayer.onclick=()=>{let p=S.prayers.find(x=>x.id===activePrayer);prayerDetailDialog.close();setTimeout(()=>openPrayerForm(p),80)};archivePrayer.onclick=()=>{let p=S.prayers.find(x=>x.id===activePrayer);if(confirm(`Arquivar "${p.name}"?`)){p.archived=true;save();prayerDetailDialog.close()}};closePrayer.onclick=()=>prayerDetailDialog.close();
 habitHistoryBtn.onclick=()=>showHistory("habit");prayerHistoryBtn.onclick=()=>showHistory("prayer");function showHistory(type){let map=type==="habit"?S.habitCompletions:S.prayerCompletions,items=type==="habit"?S.habits:S.prayers,rows=[];for(let k in map){let[i,date]=k.split("|"),it=items.find(x=>x.id===i);if(it)rows.push({date,name:it.name})}rows.sort((a,b)=>b.date.localeCompare(a.date));historyTitle.textContent=type==="habit"?"Histórico de hábitos":"Histórico de orações";historyContent.innerHTML=rows.length?rows.map(r=>`<div class="history-row done"><span>${esc(r.name)}</span><strong>${short(r.date)}</strong></div>`).join(""):'<p class="empty">Ainda não há registros.</p>';historyDialog.showModal()}closeHistory.onclick=()=>historyDialog.close();
 function showArchived(type){let a=(type==="habit"?S.habits:S.prayers).filter(x=>x.archived);archiveTitle.textContent=type==="habit"?"Hábitos arquivados":"Orações arquivadas";archiveContent.innerHTML=a.length?a.map(x=>`<div class="list-item"><div class="list-main"><strong>${esc(x.name)}</strong></div><div class="archive-actions"><button data-restore="${x.id}" data-type="${type}">Restaurar</button></div></div>`).join(""):'<p class="empty">Nenhum item arquivado.</p>';archiveContent.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{let arr=b.dataset.type==="habit"?S.habits:S.prayers,item=arr.find(x=>x.id===b.dataset.restore);item.archived=false;save();showArchived(b.dataset.type)});archiveDialog.showModal()}habitArchivedBtn.onclick=()=>showArchived("habit");prayerArchivedBtn.onclick=()=>showArchived("prayer");closeArchive.onclick=()=>archiveDialog.close();
+
+
+
+/* ---------- Statistics v0.7 ---------- */
+let statsMode="today";
+
+function dateRangeForStats(mode){
+  const now=new Date(); now.setHours(12,0,0,0);
+  let start=new Date(now), end=new Date(now);
+  if(mode==="week"){
+    start.setDate(now.getDate()-now.getDay());
+    end=new Date(start); end.setDate(start.getDate()+6);
+  }else if(mode==="month"){
+    start=new Date(now.getFullYear(),now.getMonth(),1,12);
+    end=new Date(now.getFullYear(),now.getMonth()+1,0,12);
+  }else if(mode==="year"){
+    start=new Date(now.getFullYear(),0,1,12);
+    end=new Date(now.getFullYear(),11,31,12);
+  }
+  return {start,end};
+}
+
+function eachDate(start,end){
+  const out=[]; let d=new Date(start);
+  while(d<=end){ out.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return out;
+}
+
+function periodLabel(mode){
+  const now=new Date();
+  if(mode==="today") return fdate(now);
+  if(mode==="week"){
+    const {start,end}=dateRangeForStats(mode);
+    return `${start.getDate()}/${start.getMonth()+1} a ${end.getDate()}/${end.getMonth()+1}`;
+  }
+  if(mode==="month") return new Intl.DateTimeFormat("pt-BR",{month:"long",year:"numeric"}).format(now);
+  return String(now.getFullYear());
+}
+
+function getPeriodStats(mode){
+  const {start,end}=dateRangeForStats(mode);
+  const dates=eachDate(start,end).filter(d=>d<=new Date());
+  let hp=0,hc=0,pp=0,pc=0,tp=0,tc=0;
+  const habitMap={};
+
+  dates.forEach(d=>{
+    S.habits.filter(h=>sched(h,d)).forEach(h=>{
+      hp++;
+      if(!habitMap[h.id]) habitMap[h.id]={name:h.name,icon:h.icon||"⭐",planned:0,done:0};
+      habitMap[h.id].planned++;
+      if(done(S.habitCompletions,h.id,dk(d))){ hc++; habitMap[h.id].done++; }
+    });
+    S.prayers.filter(p=>sched(p,d)).forEach(p=>{
+      pp++; if(done(S.prayerCompletions,p.id,dk(d))) pc++;
+    });
+    S.tasks.filter(t=>sched(t,d)).forEach(t=>{
+      tp++; if(done(S.taskCompletions,t.id,dk(d))) tc++;
+    });
+  });
+
+  const planned=hp+pp+tp, completed=hc+pc+tc;
+  return {
+    hp,hc,pp,pc,tp,tc,planned,completed,
+    percent:planned?Math.round(completed/planned*100):0,
+    habitMap,
+    dates
+  };
+}
+
+function percent(doneCount,plannedCount){
+  return plannedCount?Math.round(doneCount/plannedCount*100):0;
+}
+
+function renderStatistics(){
+  const s=getPeriodStats(statsMode);
+  statsPeriodLabel.textContent=periodLabel(statsMode);
+  statsOverallBig.textContent=`${s.percent}%`;
+  statsOverallBar.style.width=`${s.percent}%`;
+
+  statsHabitValue.textContent=`${s.hc}/${s.hp}`;
+  statsPrayerValue.textContent=`${s.pc}/${s.pp}`;
+  statsTaskValue.textContent=`${s.tc}/${s.tp}`;
+  statsHabitPercent.textContent=`${percent(s.hc,s.hp)}%`;
+  statsPrayerPercent.textContent=`${percent(s.pc,s.pp)}%`;
+  statsTaskPercent.textContent=`${percent(s.tc,s.tp)}%`;
+
+  const habits=Object.values(s.habitMap).sort((a,b)=>percent(b.done,b.planned)-percent(a.done,a.planned));
+  habitStatsList.innerHTML=habits.length?habits.map(h=>{
+    const p=percent(h.done,h.planned);
+    return `<div>
+      <div class="bar-item-head"><span>${h.icon} ${esc(h.name)}</span><small>${h.done}/${h.planned} • ${p}%</small></div>
+      <div class="stat-bar"><div style="width:${p}%"></div></div>
+    </div>`;
+  }).join(""):'<p class="empty">Ainda não há hábitos previstos neste período.</p>';
+
+  let chartDates=s.dates;
+  if(statsMode==="month" && chartDates.length>14){
+    chartDates=chartDates.slice(-14);
+  }
+  if(statsMode==="year"){
+    const now=new Date(), cols=[];
+    for(let m=0;m<=now.getMonth();m++){
+      const start=new Date(now.getFullYear(),m,1,12);
+      const end=new Date(now.getFullYear(),m+1,0,12);
+      const days=eachDate(start,end).filter(d=>d<=now);
+      let pl=0,co=0;
+      days.forEach(d=>{
+        S.habits.filter(h=>sched(h,d)).forEach(h=>{pl++;if(done(S.habitCompletions,h.id,dk(d)))co++});
+        S.prayers.filter(p=>sched(p,d)).forEach(p=>{pl++;if(done(S.prayerCompletions,p.id,dk(d)))co++});
+        S.tasks.filter(t=>sched(t,d)).forEach(t=>{pl++;if(done(S.taskCompletions,t.id,dk(d)))co++});
+      });
+      cols.push({label:["J","F","M","A","M","J","J","A","S","O","N","D"][m],pct:percent(co,pl)});
+    }
+    dailyStatsList.innerHTML=cols.map(x=>`<div class="daily-col"><small>${x.pct}%</small><div class="daily-track"><div class="daily-fill" style="height:${x.pct}%"></div></div><span>${x.label}</span></div>`).join("");
+  }else{
+    dailyStatsList.innerHTML=chartDates.map(d=>{
+      let pl=0,co=0;
+      S.habits.filter(h=>sched(h,d)).forEach(h=>{pl++;if(done(S.habitCompletions,h.id,dk(d)))co++});
+      S.prayers.filter(p=>sched(p,d)).forEach(p=>{pl++;if(done(S.prayerCompletions,p.id,dk(d)))co++});
+      S.tasks.filter(t=>sched(t,d)).forEach(t=>{pl++;if(done(S.taskCompletions,t.id,dk(d)))co++});
+      const p=percent(co,pl);
+      const label=statsMode==="today"?"Hoje":statsMode==="week"?["D","S","T","Q","Q","S","S"][d.getDay()]:String(d.getDate());
+      return `<div class="daily-col"><small>${p}%</small><div class="daily-track"><div class="daily-fill" style="height:${p}%"></div></div><span>${label}</span></div>`;
+    }).join("");
+  }
+}
+
+document.getElementById("openStatsBtn").onclick=()=>{
+  go("statistics");
+  renderStatistics();
+};
+document.getElementById("closeStatsBtn").onclick=()=>go("home");
+document.querySelectorAll("[data-stats-mode]").forEach(b=>b.onclick=()=>{
+  statsMode=b.dataset.statsMode;
+  document.querySelectorAll("[data-stats-mode]").forEach(x=>x.classList.toggle("active",x===b));
+  renderStatistics();
+});
 
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();
