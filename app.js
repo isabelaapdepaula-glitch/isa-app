@@ -1,8 +1,8 @@
-const K="isa_app_data_v10",K7="isa_app_data_v07";
+const K="isa_app_data_v11",K10="isa_app_data_v10";
 function dk(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function pd(s){if(!s)return null;let[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c,12)}
-function blank(){return{version:10,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[],reviews:{}}}
-function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K7);if(old)try{let o=JSON.parse(old);s={...s,...o,version:10,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
+function blank(){return{version:11,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[],reviews:{},customCategories:[]}}
+function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K10);if(old)try{let o=JSON.parse(old);s={...s,...o,version:11,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
 let S=load(),habitView="today",prayerView="today",taskView="today",routineFilter="today",activeHabit=null,activePrayer=null,calendarDate=new Date(),selectedDate=new Date();
 function save(){localStorage.setItem(K,JSON.stringify(S));renderAll()}
 function key(id,date=dk()){return `${id}|${date}`} function done(map,id,date=dk()){return !!map[key(id,date)]}
@@ -18,8 +18,8 @@ function flabel(i){let f=i.frequency||{type:"daily"};if(f.type==="daily")return"
 const EMOJIS=["📖","📚","📕","📘","📙","📗","📝","✏️","🧠","🎓","💡","✅","⭐","🌟","✨","🌞","🌙","☀️","☁️","🌈","🌸","🌷","🌹","🌻","🌿","🍃","🌱","🍎","🍓","🍌","🥗","🥣","🍵","☕","💧","🥤","🧴","🪥","🛁","🚿","🧼","🧹","🧺","🏠","🛏️","🪴","🕯️","🙏","✝️","⛪","📿","🕊️","❤️","💗","💖","💛","💚","💙","💜","😊","😇","🥰","😌","😴","🤗","💪","🏃","🚶","🧘","🏋️","🤸","🚴","🏊","⚽","🏐","🎾","🎯","🎵","🎶","🎸","🎹","🎨","🎬","📷","📱","💻","⌚","⏰","📅","🗓️","⏳","💼","💰","🛍️","🧳","🚗","🚌","🚲","✈️","🐶","🐱","🦋","🐝","🍀","🌍","🔥","💤","🎁","🎂","🍽️","🧁","🍫","🥛","🧃","💊"];
 emojiPicker.innerHTML=EMOJIS.map(e=>`<button type="button" class="emoji-option" data-emoji="${e}">${e}</button>`).join("");emojiPicker.querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>selectEmoji(b.dataset.emoji));function selectEmoji(e){habitIcon.value=e;habitIconPreview.textContent=e;emojiPicker.querySelectorAll(".emoji-option").forEach(b=>b.classList.toggle("selected",b.dataset.emoji===e))}
 
-function renderHabits(){let a=habitView==="today"?todayHabits():S.habits.filter(x=>!x.archived),r=habitList;r.innerHTML="";habitEmpty.classList.toggle("hidden",a.length>0);a.forEach(h=>{let z=done(S.habitCompletions,h.id),e=document.createElement("article");e.className="item-card"+(z?" done":"");e.innerHTML=`<div class="item-top"><span class="item-icon">${h.icon||"⭐"}</span>${h.time?`<span class="item-time">${h.time}</span>`:""}</div><div><button class="item-title" data-hd="${h.id}">${esc(h.name)}</button><div class="item-category">${esc(h.category||"")}</div></div>${habitView==="today"?`<button class="check ${z?"done":""}" data-h="${h.id}">${z?"✓":""}</button>`:""}`;r.appendChild(e)});r.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>toggle(S.habitCompletions,b.dataset.h));r.querySelectorAll("[data-hd]").forEach(b=>b.onclick=()=>openHabit(b.dataset.hd))}
-function renderPrayers(){let a=prayerView==="today"?todayPrayers():S.prayers.filter(x=>!x.archived),q=(document.getElementById("prayerSearch")?.value||"").trim().toLowerCase(),r=prayerList;if(q)a=a.filter(p=>(p.name||"").toLowerCase().includes(q)||(p.text||"").toLowerCase().includes(q));r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma oração nesta seção.</p>';return}a.forEach(p=>{let z=done(S.prayerCompletions,p.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(flabel(p))}${p.time?` • ${p.time}`:""}${z?" • Finalizada hoje":""}</small></div><button class="status" data-p="${p.id}">${z?"✓":"Abrir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openPrayer(b.dataset.p))}
+function renderHabits(){let a=habitView==="today"?todayHabits():S.habits.filter(x=>!x.archived),r=habitList;r.innerHTML="";habitEmpty.classList.toggle("hidden",a.length>0);habitManageHint.classList.toggle("hidden",habitView!=="all");a.forEach((h,idx)=>{let z=done(S.habitCompletions,h.id),e=document.createElement("article");e.className="item-card"+(z?" done":"");e.innerHTML=`<div class="item-top"><span class="item-icon">${h.icon||"⭐"}</span>${h.time?`<span class="item-time">${h.time}</span>`:""}</div><div><button class="item-title" data-hd="${h.id}">${esc(h.name)}</button><div class="item-category">${esc(h.category||"")}</div></div>${habitView==="today"?`<button class="check ${z?"done":""}" data-h="${h.id}">${z?"✓":""}</button>`:`<div class="item-actions"><button data-hup="${h.id}">↑</button><button data-hdown="${h.id}">↓</button><button data-hedit="${h.id}">Editar</button></div>`}`;r.appendChild(e)});r.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>toggle(S.habitCompletions,b.dataset.h));r.querySelectorAll("[data-hd]").forEach(b=>b.onclick=()=>openHabit(b.dataset.hd));r.querySelectorAll("[data-hedit]").forEach(b=>b.onclick=()=>openHabitForm(S.habits.find(x=>x.id===b.dataset.hedit)));r.querySelectorAll("[data-hup]").forEach(b=>b.onclick=()=>moveItem(S.habits,b.dataset.hup,-1));r.querySelectorAll("[data-hdown]").forEach(b=>b.onclick=()=>moveItem(S.habits,b.dataset.hdown,1))}
+function renderPrayers(){let a=prayerView==="today"?todayPrayers():S.prayers.filter(x=>!x.archived),q=(document.getElementById("prayerSearch")?.value||"").trim().toLowerCase(),r=prayerList;prayerManageHint.classList.toggle("hidden",prayerView!=="all");if(q)a=a.filter(p=>(p.name||"").toLowerCase().includes(q)||(p.text||"").toLowerCase().includes(q));r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma oração nesta seção.</p>';return}a.forEach(p=>{let z=done(S.prayerCompletions,p.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(flabel(p))}${p.time?` • ${p.time}`:""}${z?" • Finalizada hoje":""}</small>${prayerView==="all"?`<div class="item-actions"><button data-pup="${p.id}">↑</button><button data-pdown="${p.id}">↓</button><button data-pedit="${p.id}">Editar</button></div>`:""}</div><button class="status" data-p="${p.id}">${z?"✓":"Abrir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openPrayer(b.dataset.p));r.querySelectorAll("[data-pedit]").forEach(b=>b.onclick=()=>openPrayerForm(S.prayers.find(x=>x.id===b.dataset.pedit)));r.querySelectorAll("[data-pup]").forEach(b=>b.onclick=()=>moveItem(S.prayers,b.dataset.pup,-1));r.querySelectorAll("[data-pdown]").forEach(b=>b.onclick=()=>moveItem(S.prayers,b.dataset.pdown,1))}
 function tasksFor(date){return S.tasks.filter(x=>sched(x,date))}
 function renderTasks(){let a=taskView==="today"?tasksFor(selectedDate):S.tasks.filter(x=>!x.archived),r=taskList;r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma tarefa nesta seção.</p>';return}a.forEach(t=>{let z=done(S.taskCompletions,t.id,dk(selectedDate)),e=document.createElement("article");e.className=`list-item ${z?"done ":""}${t.priority==="high"?"priority-high":t.priority==="low"?"priority-low":""}`;e.innerHTML=`<div class="list-main"><strong>${esc(t.name)}</strong><small>${esc(t.category||"")} • ${esc(flabel(t))}${t.time?` • ${t.time}`:""}</small></div>${taskView==="today"?`<button class="status" data-t="${t.id}">${z?"✓":"Concluir"}</button>`:""}`;r.appendChild(e)});r.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>toggle(S.taskCompletions,b.dataset.t,dk(selectedDate)))}
 function renderStats(){let h=todayHabits(),p=todayPrayers(),t=todayTasks(),hc=h.filter(x=>done(S.habitCompletions,x.id)).length,pc=p.filter(x=>done(S.prayerCompletions,x.id)).length,tc=t.filter(x=>done(S.taskCompletions,x.id)).length,total=h.length+p.length+t.length,n=hc+pc+tc,pct=total?Math.round(n/total*100):0;habitSummary.textContent=`${hc} de ${h.length}`;prayerSummary.textContent=`${pc} de ${p.length}`;taskSummary.textContent=`${t.length-tc} pendentes`;statHabits.textContent=`${hc}/${h.length}`;statPrayers.textContent=`${pc}/${p.length}`;statTasks.textContent=`${tc}/${t.length}`;overallPercent.textContent=`${pct}%`;overallBar.style.width=`${pct}%`;let q=[...h.filter(x=>!done(S.habitCompletions,x.id)).map(x=>`Hábito: ${x.name}`),...p.filter(x=>!done(S.prayerCompletions,x.id)).map(x=>`Oração: ${x.name}`),...t.filter(x=>!done(S.taskCompletions,x.id)).map(x=>`Tarefa: ${x.name}`)];pendingList.innerHTML=q.length?q.slice(0,8).map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Nenhuma pendência 🎉</li>"}
@@ -311,7 +311,7 @@ closeSettingsBtn.onclick=()=>go("home");
 exportBackupBtn.onclick=()=>{
   const payload={
     app:"ISA",
-    version:10,
+    version:11,
     exportedAt:new Date().toISOString(),
     data:S
   };
@@ -332,7 +332,7 @@ importBackupInput.addEventListener("change",async e=>{
     const incoming=payload.data||payload;
     if(!incoming.habits||!incoming.prayers||!incoming.tasks) throw new Error("Arquivo inválido");
     if(!confirm("Restaurar este backup? Os dados atuais serão substituídos.")) return;
-    S={...blank(),...incoming,version:10,reviews:incoming.reviews||{}};
+    S={...blank(),...incoming,version:11,reviews:incoming.reviews||{}};
     save();
     renderSettings();
     backupStatus.textContent="Backup restaurado com sucesso.";
@@ -342,6 +342,82 @@ importBackupInput.addEventListener("change",async e=>{
     alert("Arquivo de backup inválido.");
   }
 });
+
+
+
+/* ---------- v1.1 usability ---------- */
+if(!S.customCategories) S.customCategories=[];
+
+function moveItem(arr,id,dir){
+  const idx=arr.findIndex(x=>x.id===id);
+  const next=idx+dir;
+  if(idx<0||next<0||next>=arr.length) return;
+  [arr[idx],arr[next]]=[arr[next],arr[idx]];
+  save();
+}
+
+function purgeCompletions(map,id){
+  Object.keys(map).forEach(k=>{ if(k.startsWith(id+"|")) delete map[k]; });
+}
+
+deleteHabit.onclick=()=>{
+  const h=S.habits.find(x=>x.id===activeHabit); if(!h) return;
+  if(confirm(`Excluir definitivamente "${h.name}"? O histórico deste hábito também será apagado.`)){
+    S.habits=S.habits.filter(x=>x.id!==h.id);
+    purgeCompletions(S.habitCompletions,h.id);
+    S.routine.forEach(r=>{if(r.habitId===h.id) r.habitId=""});
+    save(); habitDetailDialog.close();
+  }
+};
+deletePrayer.onclick=()=>{
+  const p=S.prayers.find(x=>x.id===activePrayer); if(!p) return;
+  if(confirm(`Excluir definitivamente "${p.name}"? O histórico desta oração também será apagado.`)){
+    S.prayers=S.prayers.filter(x=>x.id!==p.id);
+    purgeCompletions(S.prayerCompletions,p.id);
+    save(); prayerDetailDialog.close();
+  }
+};
+
+const BASE_CATEGORIES=["Espiritual","Saúde","Estudos","Pessoal","Trabalho","Organização","Pastoral","Casa","Marca","Alimentação","Outro"];
+function allCategories(){
+  return [...new Set([...BASE_CATEGORIES,...(S.customCategories||[])])];
+}
+function syncCategorySelect(select){
+  if(!select) return;
+  const current=select.value;
+  select.innerHTML=allCategories().map(c=>`<option>${esc(c)}</option>`).join("");
+  if(allCategories().includes(current)) select.value=current;
+}
+function syncAllCategorySelects(){
+  [habitCategory,taskCategory,routineCategory].forEach(syncCategorySelect);
+}
+function renderCustomCategories(){
+  customCategoryList.innerHTML=(S.customCategories||[]).length
+    ? S.customCategories.map(c=>`<span class="tag">${esc(c)} <button data-catdel="${esc(c)}">×</button></span>`).join("")
+    : '<small>Nenhuma categoria personalizada.</small>';
+  customCategoryList.querySelectorAll("[data-catdel]").forEach(b=>b.onclick=()=>{
+    const cat=b.dataset.catdel;
+    if(confirm(`Remover a categoria "${cat}" da lista? Os itens já cadastrados manterão o nome.`)){
+      S.customCategories=S.customCategories.filter(x=>x!==cat);
+      save(); syncAllCategorySelects(); renderCustomCategories();
+    }
+  });
+}
+addCategoryBtn.onclick=()=>{
+  const v=newCategoryInput.value.trim();
+  if(!v) return;
+  if(allCategories().map(x=>x.toLowerCase()).includes(v.toLowerCase())){alert("Essa categoria já existe.");return}
+  S.customCategories.push(v); newCategoryInput.value=""; save(); syncAllCategorySelects(); renderCustomCategories();
+};
+
+const oldRenderSettings=renderSettings;
+renderSettings=function(){
+  oldRenderSettings();
+  syncAllCategorySelects();
+  renderCustomCategories();
+};
+
+syncAllCategorySelects();
 
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();

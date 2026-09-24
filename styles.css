@@ -53,3 +53,15 @@ dialog{border:0;border-radius:28px;padding:0;background:transparent;width:min(92
 .simple-row strong{display:block;margin-bottom:4px}.simple-row small{color:var(--muted)}
 .setting-btn{display:block;width:100%;border:0;background:var(--pink2);color:var(--wine);border-radius:16px;padding:13px;font-weight:800;text-align:center;margin-top:10px}
 .file-label input{display:none}
+
+.manage-hint{font-size:11px;color:var(--muted);margin:-5px 0 12px 4px}
+.item-actions{display:flex;gap:6px;margin-top:8px}
+.item-actions button{border:0;background:#f7e9e2;color:var(--wine);border-radius:10px;padding:7px 9px;font-weight:800}
+.danger-btn{background:#fff0f0!important;color:#9d2c2c!important;border:1px solid #efc6c6!important}
+.category-add-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+.category-add-row input{border:1px solid #e8cfc7;border-radius:14px;padding:11px;background:white;color:#3a2023}
+.category-add-row button{border:0;background:var(--wine);color:white;border-radius:14px;padding:0 14px;font-weight:800}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tag{display:flex;align-items:center;gap:6px;background:#f7e9e2;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700}
+.tag button{border:0;background:transparent;color:#9d2c2c;font-weight:900}
+.app-info{text-align:center}.app-info small{display:block;color:var(--muted);margin-top:4px}

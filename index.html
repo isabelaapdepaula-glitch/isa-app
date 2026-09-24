@@ -41,6 +41,7 @@
 <section class="screen" id="habits">
 <header class="page-head"><div><h1>Meus hábitos</h1><p>de hoje</p></div><div class="avatar">☁︎</div></header>
 <div class="toolbar-grid"><button class="pill active" data-habit-view="today">Hoje</button><button class="pill" data-habit-view="all">Todos</button><button class="pill" id="habitHistoryBtn">Histórico</button><button class="pill" id="habitArchivedBtn">Arquivados</button></div>
+<p class="manage-hint hidden" id="habitManageHint">Na aba “Todos”, use ↑ e ↓ para reorganizar.</p>
 <div class="items-grid" id="habitList"></div><p id="habitEmpty" class="empty hidden">Nenhum hábito nesta seção.</p>
 <button class="fab" data-action="habit">＋</button>
 </section>
@@ -48,6 +49,7 @@
 <section class="screen" id="prayers">
 <header class="page-head"><div><h1>Minhas orações</h1><p>de hoje</p></div><div class="avatar">☁︎</div></header>
 <div class="toolbar-grid"><button class="pill active" data-prayer-view="today">Hoje</button><button class="pill" data-prayer-view="all">Todas</button><button class="pill" id="prayerHistoryBtn">Histórico</button><button class="pill" id="prayerArchivedBtn">Arquivadas</button></div>
+<p class="manage-hint hidden" id="prayerManageHint">Na aba “Todas”, use ↑ e ↓ para reorganizar.</p>
 <input class="search-input" id="prayerSearch" placeholder="Buscar oração..." />
 <div class="list-stack" id="prayerList"></div>
 <button class="fab" data-action="prayer">＋</button>
@@ -248,6 +250,13 @@
 </section>
 
 <section class="card">
+<h2>Categorias personalizadas</h2>
+<p>Crie categorias extras para usar em hábitos, tarefas e rotina.</p>
+<div class="category-add-row"><input id="newCategoryInput" placeholder="Ex.: Financeiro"><button id="addCategoryBtn">Adicionar</button></div>
+<div id="customCategoryList" class="tag-list"></div>
+</section>
+
+<section class="card">
 <h2>Dados do aplicativo</h2>
 <div class="mini-stats">
 <span>Hábitos cadastrados <b id="settingsHabitsCount">0</b></span>
@@ -258,6 +267,7 @@
 </div>
 </section>
 
+<section class="card app-info"><strong>ISA v1.1</strong><small>Dados salvos no seu iPhone.</small></section>
 <button class="back-stats" id="closeSettingsBtn">← Voltar para o início</button>
 </section>
 
@@ -322,8 +332,8 @@
 <button type="submit" class="save">Salvar oração</button><button type="button" class="cancel" id="cancelPrayerForm">Cancelar</button>
 </form></dialog>
 
-<dialog id="habitDetailDialog"><div class="dialog-card"><div id="habitDetailIcon" class="detail-icon"></div><h2 id="habitDetailName"></h2><p id="habitDetailMeta"></p><div class="button-row"><button id="editHabit" class="save">Editar hábito</button><button id="archiveHabit">Arquivar</button></div><button id="closeHabitDetail" class="cancel">Fechar</button></div></dialog>
-<dialog id="prayerDetailDialog"><div class="dialog-card prayer-content"><h2 id="prayerTitle"></h2><p id="prayerMeta"></p><div id="prayerText"></div><button id="finishPrayer" class="save">Marcar como finalizada</button><div class="button-row"><button id="editPrayer">Editar</button><button id="archivePrayer">Arquivar</button></div><button id="closePrayer" class="cancel">Fechar</button></div></dialog>
+<dialog id="habitDetailDialog"><div class="dialog-card"><div id="habitDetailIcon" class="detail-icon"></div><h2 id="habitDetailName"></h2><p id="habitDetailMeta"></p><div class="button-row"><button id="editHabit" class="save">Editar hábito</button><button id="archiveHabit">Arquivar</button></div><button id="deleteHabit" class="danger-btn">Excluir definitivamente</button><button id="closeHabitDetail" class="cancel">Fechar</button></div></dialog>
+<dialog id="prayerDetailDialog"><div class="dialog-card prayer-content"><h2 id="prayerTitle"></h2><p id="prayerMeta"></p><div id="prayerText"></div><button id="finishPrayer" class="save">Marcar como finalizada</button><div class="button-row"><button id="editPrayer">Editar</button><button id="archivePrayer">Arquivar</button></div><button id="deletePrayer" class="danger-btn">Excluir definitivamente</button><button id="closePrayer" class="cancel">Fechar</button></div></dialog>
 <dialog id="historyDialog"><div class="dialog-card form-scroll"><h2 id="historyTitle">Histórico</h2><div id="historyContent" class="history-list"></div><button id="closeHistory" class="cancel">Fechar</button></div></dialog>
 <dialog id="archiveDialog"><div class="dialog-card form-scroll"><h2 id="archiveTitle">Arquivados</h2><div id="archiveContent" class="list-stack"></div><button id="closeArchive" class="cancel">Fechar</button></div></dialog>
 
