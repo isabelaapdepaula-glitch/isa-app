@@ -92,6 +92,7 @@
 
 <div id="agendaRoutineView" class="hidden">
 <div class="toolbar-grid"><button class="pill active" data-routine-filter="today">Hoje</button><button class="pill" data-routine-filter="all">Todos</button></div>
+<p class="manage-hint hidden" id="routineManageHint">Em “Todos”, use ↑ e ↓ para reorganizar ou excluir.</p>
 <div class="list-stack" id="routineList"></div>
 <button class="fab secondary-fab" id="addRoutineBtn">＋</button>
 </div>
@@ -138,6 +139,11 @@
 
 <section class="screen" id="review">
 <header class="page-head"><div><h1>Retrospectiva</h1><p id="reviewMonthLabel"></p></div><div class="avatar avatar-slot" aria-label="Foto do perfil"></div></header>
+<div class="review-month-nav">
+  <button id="prevReviewMonth">‹</button>
+  <input type="month" id="reviewMonthPicker">
+  <button id="nextReviewMonth">›</button>
+</div>
 
 <section class="card stats-highlight">
 <span>Seu mês em números</span>
@@ -247,15 +253,19 @@
   <div class="profile-preview avatar-slot large-avatar" id="settingsAvatarPreview" aria-label="Prévia da foto do perfil"></div>
   <div class="profile-actions">
     <label class="setting-btn file-label">Escolher foto<input type="file" id="profilePhotoInput" accept="image/*"></label>
+    <label class="slider-label">Zoom <input type="range" id="profileZoom" min="100" max="220" value="100"></label>
+    <label class="slider-label">Horizontal <input type="range" id="profileX" min="0" max="100" value="50"></label>
+    <label class="slider-label">Vertical <input type="range" id="profileY" min="0" max="100" value="50"></label>
+    <button class="setting-btn" id="resetProfilePositionBtn">Centralizar foto</button>
     <button class="setting-btn" id="removeProfilePhotoBtn">Remover foto</button>
-    <small>A foto aparece no topo do app e fica salva no seu iPhone.</small>
+    <small>Ajuste o enquadramento com zoom e posição.</small>
   </div>
 </div>
 </section>
 
-<section class="card">
+<section class="card" id="backupReminderCard">
 <h2>Backup</h2>
-<p>Salve uma cópia dos seus hábitos, orações, tarefas, rotina, estatísticas e retrospectivas.</p>
+<p id="backupReminderText">Salve uma cópia dos seus hábitos, orações, tarefas, rotina, estatísticas e retrospectivas.</p>
 <button class="setting-btn" id="exportBackupBtn">Exportar backup</button>
 <label class="setting-btn file-label">Importar backup<input type="file" id="importBackupInput" accept=".json,application/json"></label>
 <small id="backupStatus"></small>
@@ -303,7 +313,7 @@
 <label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label>
 </div></div>
 <label>Vincular a hábito <small>(opcional)</small><select id="routineHabitLink"><option value="">Nenhum</option></select></label>
-<button type="submit" class="save">Salvar rotina</button><button type="button" class="cancel" id="cancelRoutine">Cancelar</button>
+<button type="submit" class="save">Salvar rotina</button><button type="button" class="danger-btn hidden" id="deleteRoutineBtn">Excluir item da rotina</button><button type="button" class="cancel" id="cancelRoutine">Cancelar</button>
 </form></dialog>
 
 <dialog id="taskFormDialog"><form id="taskForm" class="dialog-card form-scroll">
@@ -346,6 +356,12 @@
 
 <dialog id="habitDetailDialog"><div class="dialog-card"><div id="habitDetailIcon" class="detail-icon"></div><h2 id="habitDetailName"></h2><p id="habitDetailMeta"></p><div class="button-row"><button id="editHabit" class="save">Editar hábito</button><button id="archiveHabit">Arquivar</button></div><button id="deleteHabit" class="danger-btn">Excluir definitivamente</button><button id="closeHabitDetail" class="cancel">Fechar</button></div></dialog>
 <dialog id="prayerDetailDialog"><div class="dialog-card prayer-content"><h2 id="prayerTitle"></h2><p id="prayerMeta"></p><div id="prayerText"></div><button id="finishPrayer" class="save">Marcar como finalizada</button><div class="button-row"><button id="editPrayer">Editar</button><button id="archivePrayer">Arquivar</button></div><button id="deletePrayer" class="danger-btn">Excluir definitivamente</button><button id="closePrayer" class="cancel">Fechar</button></div></dialog>
+<dialog id="taskDetailDialog"><div class="dialog-card">
+<h2 id="taskDetailName"></h2><p id="taskDetailMeta"></p><p id="taskDetailNotes"></p>
+<div class="button-row"><button id="editTask" class="save">Editar</button><button id="archiveTask">Arquivar</button></div>
+<button id="deleteTask" class="danger-btn">Excluir definitivamente</button>
+<button id="closeTaskDetail" class="cancel">Fechar</button>
+</div></dialog>
 <dialog id="historyDialog"><div class="dialog-card form-scroll"><h2 id="historyTitle">Histórico</h2><div id="historyContent" class="history-list"></div><button id="closeHistory" class="cancel">Fechar</button></div></dialog>
 <dialog id="archiveDialog"><div class="dialog-card form-scroll"><h2 id="archiveTitle">Arquivados</h2><div id="archiveContent" class="list-stack"></div><button id="closeArchive" class="cancel">Fechar</button></div></dialog>
 

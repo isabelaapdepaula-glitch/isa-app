@@ -74,3 +74,5 @@ dialog{border:0;border-radius:28px;padding:0;background:transparent;width:min(92
 .large-avatar{width:88px;height:88px;border:4px solid var(--pink2);border-radius:50%}
 .profile-actions{display:grid;gap:8px}
 .profile-actions small{color:var(--muted)}
+
+.slider-label{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:8px;font-size:12px;font-weight:700}.slider-label input{width:100%}.review-month-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;margin:0 0 16px}.review-month-nav button,.review-month-nav input{border:0;background:var(--cream);color:var(--wine);border-radius:14px;padding:10px;font-weight:800;box-shadow:var(--shadow)}#backupReminderCard.backup-warning{outline:3px solid var(--pink)}.task-order-actions,.routine-order-actions{display:flex;gap:6px;margin-top:8px}.task-order-actions button,.routine-order-actions button{border:0;background:#f7e9e2;color:var(--wine);border-radius:10px;padding:7px 9px;font-weight:800}.calendar-day{transition:.15s transform}.calendar-day:active{transform:scale(.96)}.setting-btn:active,.primary-btn:active,.pill:active{transform:scale(.98)}
