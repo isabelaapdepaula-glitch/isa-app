@@ -38,3 +38,18 @@ dialog{border:0;border-radius:28px;padding:0;background:transparent;width:min(92
 .daily-col span{font-size:9px;font-weight:800}
 .daily-col small{font-size:9px;color:var(--muted)}
 .back-stats{width:100%;border:0;background:var(--wine);color:white;padding:14px;border-radius:999px;font-weight:800;margin-bottom:20px}
+
+.home-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.shortcut-card{border:0;background:var(--cream);color:var(--wine);border-radius:20px;padding:13px;display:flex;gap:10px;align-items:center;text-align:left;box-shadow:var(--shadow)}
+.shortcut-card>span{font-size:26px}
+.shortcut-card strong,.shortcut-card small{display:block}.shortcut-card small{font-size:10px;color:var(--muted);margin-top:3px}
+.search-input{width:100%;border:0;background:var(--cream);color:var(--wine);border-radius:999px;padding:12px 16px;margin:-4px 0 16px;box-shadow:var(--shadow)}
+.review-form{display:grid;gap:0}.review-form label{display:grid;gap:6px;font-weight:700;margin-bottom:13px}.review-form input,.review-form textarea{width:100%;border:1px solid #e8cfc7;border-radius:14px;padding:12px;background:white;color:#3a2023}
+.review-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:20px}
+.annual-month-list,.simple-list{display:grid;gap:10px}
+.annual-month{background:white;border-radius:16px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.annual-month strong{display:block}.annual-month small{color:var(--muted)}
+.simple-row{background:white;border-radius:16px;padding:12px}
+.simple-row strong{display:block;margin-bottom:4px}.simple-row small{color:var(--muted)}
+.setting-btn{display:block;width:100%;border:0;background:var(--pink2);color:var(--wine);border-radius:16px;padding:13px;font-weight:800;text-align:center;margin-top:10px}
+.file-label input{display:none}

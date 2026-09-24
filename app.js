@@ -1,8 +1,8 @@
-const K="isa_app_data_v07",K6="isa_app_data_v06";
+const K="isa_app_data_v10",K7="isa_app_data_v07";
 function dk(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function pd(s){if(!s)return null;let[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c,12)}
-function blank(){return{version:7,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[]}}
-function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K6);if(old)try{let o=JSON.parse(old);s={...s,...o,version:7,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
+function blank(){return{version:10,habits:[],habitCompletions:{},prayers:[],prayerCompletions:{},tasks:[],taskCompletions:{},routine:[],reviews:{}}}
+function load(){let r=localStorage.getItem(K);if(r)try{return JSON.parse(r)}catch{};let s=blank(),old=localStorage.getItem(K7);if(old)try{let o=JSON.parse(old);s={...s,...o,version:10,routine:o.routine||[]}}catch{};localStorage.setItem(K,JSON.stringify(s));return s}
 let S=load(),habitView="today",prayerView="today",taskView="today",routineFilter="today",activeHabit=null,activePrayer=null,calendarDate=new Date(),selectedDate=new Date();
 function save(){localStorage.setItem(K,JSON.stringify(S));renderAll()}
 function key(id,date=dk()){return `${id}|${date}`} function done(map,id,date=dk()){return !!map[key(id,date)]}
@@ -19,7 +19,7 @@ const EMOJIS=["📖","📚","📕","📘","📙","📗","📝","✏️","🧠","
 emojiPicker.innerHTML=EMOJIS.map(e=>`<button type="button" class="emoji-option" data-emoji="${e}">${e}</button>`).join("");emojiPicker.querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>selectEmoji(b.dataset.emoji));function selectEmoji(e){habitIcon.value=e;habitIconPreview.textContent=e;emojiPicker.querySelectorAll(".emoji-option").forEach(b=>b.classList.toggle("selected",b.dataset.emoji===e))}
 
 function renderHabits(){let a=habitView==="today"?todayHabits():S.habits.filter(x=>!x.archived),r=habitList;r.innerHTML="";habitEmpty.classList.toggle("hidden",a.length>0);a.forEach(h=>{let z=done(S.habitCompletions,h.id),e=document.createElement("article");e.className="item-card"+(z?" done":"");e.innerHTML=`<div class="item-top"><span class="item-icon">${h.icon||"⭐"}</span>${h.time?`<span class="item-time">${h.time}</span>`:""}</div><div><button class="item-title" data-hd="${h.id}">${esc(h.name)}</button><div class="item-category">${esc(h.category||"")}</div></div>${habitView==="today"?`<button class="check ${z?"done":""}" data-h="${h.id}">${z?"✓":""}</button>`:""}`;r.appendChild(e)});r.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>toggle(S.habitCompletions,b.dataset.h));r.querySelectorAll("[data-hd]").forEach(b=>b.onclick=()=>openHabit(b.dataset.hd))}
-function renderPrayers(){let a=prayerView==="today"?todayPrayers():S.prayers.filter(x=>!x.archived),r=prayerList;r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma oração nesta seção.</p>';return}a.forEach(p=>{let z=done(S.prayerCompletions,p.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(flabel(p))}${p.time?` • ${p.time}`:""}${z?" • Finalizada hoje":""}</small></div><button class="status" data-p="${p.id}">${z?"✓":"Abrir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openPrayer(b.dataset.p))}
+function renderPrayers(){let a=prayerView==="today"?todayPrayers():S.prayers.filter(x=>!x.archived),q=(document.getElementById("prayerSearch")?.value||"").trim().toLowerCase(),r=prayerList;if(q)a=a.filter(p=>(p.name||"").toLowerCase().includes(q)||(p.text||"").toLowerCase().includes(q));r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma oração nesta seção.</p>';return}a.forEach(p=>{let z=done(S.prayerCompletions,p.id),e=document.createElement("article");e.className="list-item"+(z?" done":"");e.innerHTML=`<div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(flabel(p))}${p.time?` • ${p.time}`:""}${z?" • Finalizada hoje":""}</small></div><button class="status" data-p="${p.id}">${z?"✓":"Abrir"}</button>`;r.appendChild(e)});r.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openPrayer(b.dataset.p))}
 function tasksFor(date){return S.tasks.filter(x=>sched(x,date))}
 function renderTasks(){let a=taskView==="today"?tasksFor(selectedDate):S.tasks.filter(x=>!x.archived),r=taskList;r.innerHTML="";if(!a.length){r.innerHTML='<p class="empty">Nenhuma tarefa nesta seção.</p>';return}a.forEach(t=>{let z=done(S.taskCompletions,t.id,dk(selectedDate)),e=document.createElement("article");e.className=`list-item ${z?"done ":""}${t.priority==="high"?"priority-high":t.priority==="low"?"priority-low":""}`;e.innerHTML=`<div class="list-main"><strong>${esc(t.name)}</strong><small>${esc(t.category||"")} • ${esc(flabel(t))}${t.time?` • ${t.time}`:""}</small></div>${taskView==="today"?`<button class="status" data-t="${t.id}">${z?"✓":"Concluir"}</button>`:""}`;r.appendChild(e)});r.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>toggle(S.taskCompletions,b.dataset.t,dk(selectedDate)))}
 function renderStats(){let h=todayHabits(),p=todayPrayers(),t=todayTasks(),hc=h.filter(x=>done(S.habitCompletions,x.id)).length,pc=p.filter(x=>done(S.prayerCompletions,x.id)).length,tc=t.filter(x=>done(S.taskCompletions,x.id)).length,total=h.length+p.length+t.length,n=hc+pc+tc,pct=total?Math.round(n/total*100):0;habitSummary.textContent=`${hc} de ${h.length}`;prayerSummary.textContent=`${pc} de ${p.length}`;taskSummary.textContent=`${t.length-tc} pendentes`;statHabits.textContent=`${hc}/${h.length}`;statPrayers.textContent=`${pc}/${p.length}`;statTasks.textContent=`${tc}/${t.length}`;overallPercent.textContent=`${pct}%`;overallBar.style.width=`${pct}%`;let q=[...h.filter(x=>!done(S.habitCompletions,x.id)).map(x=>`Hábito: ${x.name}`),...p.filter(x=>!done(S.prayerCompletions,x.id)).map(x=>`Oração: ${x.name}`),...t.filter(x=>!done(S.taskCompletions,x.id)).map(x=>`Tarefa: ${x.name}`)];pendingList.innerHTML=q.length?q.slice(0,8).map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Nenhuma pendência 🎉</li>"}
@@ -198,6 +198,149 @@ document.querySelectorAll("[data-stats-mode]").forEach(b=>b.onclick=()=>{
   statsMode=b.dataset.statsMode;
   document.querySelectorAll("[data-stats-mode]").forEach(x=>x.classList.toggle("active",x===b));
   renderStatistics();
+});
+
+
+
+/* ---------- v1.0 Retrospectives + Backup + Search ---------- */
+if(!S.reviews) S.reviews={};
+
+document.getElementById("prayerSearch").addEventListener("input",()=>renderPrayers());
+
+function monthKey(date=new Date()){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+}
+function monthNameFromKey(k){
+  const [y,m]=k.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-BR",{month:"long",year:"numeric"}).format(new Date(y,m-1,1,12));
+}
+function currentMonthStats(){
+  return getPeriodStats("month");
+}
+function reviewFields(){
+  return {
+    song:"reviewSong", artist:"reviewArtist", app:"reviewApp", movie:"reviewMovie",
+    series:"reviewSeries", book:"reviewBook", place:"reviewPlace",
+    favoriteMoment:"reviewFavoriteMoment", laugh:"reviewLaugh", learned:"reviewLearned",
+    proud:"reviewProud", god:"reviewGod", self:"reviewSelf", others:"reviewOthers",
+    duties:"reviewDuties", correct:"reviewCorrect", gratitude:"reviewGratitude",
+    offer:"reviewOffer", virtue:"reviewVirtue", priority:"reviewPriority", intention:"reviewIntention"
+  };
+}
+
+function renderReview(){
+  const now=new Date(), key=monthKey(now), stats=currentMonthStats();
+  reviewMonthLabel.textContent=new Intl.DateTimeFormat("pt-BR",{month:"long",year:"numeric"}).format(now);
+  reviewOverallPercent.textContent=`${stats.percent}%`;
+  reviewOverallBar.style.width=`${stats.percent}%`;
+  reviewHabits.textContent=`${stats.hc}/${stats.hp}`;
+  reviewPrayers.textContent=`${stats.pc}/${stats.pp}`;
+  reviewTasks.textContent=`${stats.tc}/${stats.tp}`;
+  reviewHabitsPct.textContent=`${percent(stats.hc,stats.hp)}%`;
+  reviewPrayersPct.textContent=`${percent(stats.pc,stats.pp)}%`;
+  reviewTasksPct.textContent=`${percent(stats.tc,stats.tp)}%`;
+
+  const habits=Object.values(stats.habitMap).sort((a,b)=>percent(b.done,b.planned)-percent(a.done,a.planned));
+  reviewHabitList.innerHTML=habits.length?habits.map(h=>{
+    const p=percent(h.done,h.planned);
+    return `<div><div class="bar-item-head"><span>${h.icon} ${esc(h.name)}</span><small>${h.done}/${h.planned} • ${p}%</small></div><div class="stat-bar"><div style="width:${p}%"></div></div></div>`;
+  }).join(""):'<p class="empty">Ainda não há hábitos previstos neste mês.</p>';
+
+  const saved=S.reviews[key]||{};
+  const fields=reviewFields();
+  Object.entries(fields).forEach(([prop,id])=>{ document.getElementById(id).value=saved[prop]||""; });
+}
+
+reviewForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  const key=monthKey(), stats=currentMonthStats(), values={};
+  Object.entries(reviewFields()).forEach(([prop,id])=>values[prop]=document.getElementById(id).value.trim());
+  S.reviews[key]={
+    ...values,
+    month:key,
+    savedAt:new Date().toISOString(),
+    snapshot:{
+      percent:stats.percent,
+      hc:stats.hc,hp:stats.hp,pc:stats.pc,pp:stats.pp,tc:stats.tc,tp:stats.tp,
+      habits:Object.values(stats.habitMap).map(h=>({...h,percent:percent(h.done,h.planned)}))
+    }
+  };
+  save();
+  alert("Retrospectiva salva.");
+  renderReview();
+});
+
+function renderAnnualReview(){
+  const now=new Date(), year=now.getFullYear();
+  annualYearLabel.textContent=String(year);
+  const yearStats=getPeriodStats("year");
+  annualOverallPercent.textContent=`${yearStats.percent}%`;
+  annualOverallBar.style.width=`${yearStats.percent}%`;
+  annualHabits.textContent=yearStats.hc;
+  annualPrayers.textContent=yearStats.pc;
+  annualTasks.textContent=yearStats.tc;
+
+  const entries=Object.entries(S.reviews).filter(([k])=>k.startsWith(year+"-")).sort(([a],[b])=>a.localeCompare(b));
+  annualMonthList.innerHTML=entries.length?entries.map(([k,r])=>{
+    const pct=r.snapshot?.percent ?? 0;
+    return `<div class="annual-month"><div><strong>${monthNameFromKey(k)}</strong><small>${r.favoriteMoment?esc(r.favoriteMoment).slice(0,70):"Retrospectiva salva"}</small></div><b>${pct}%</b></div>`;
+  }).join(""):'<p class="empty">Nenhuma retrospectiva mensal salva neste ano.</p>';
+
+  const songs=entries.filter(([,r])=>r.song).map(([k,r])=>`<div class="simple-row"><strong>${monthNameFromKey(k)}</strong><span>🎵 ${esc(r.song)}${r.artist?` — ${esc(r.artist)}`:""}</span></div>`);
+  annualSongs.innerHTML=songs.length?songs.join(""):'<p class="empty">Nenhuma música registrada.</p>';
+
+  const moments=entries.filter(([,r])=>r.favoriteMoment).map(([k,r])=>`<div class="simple-row"><strong>${monthNameFromKey(k)}</strong><span>${esc(r.favoriteMoment)}</span></div>`);
+  annualMoments.innerHTML=moments.length?moments.join(""):'<p class="empty">Nenhum momento registrado.</p>';
+}
+
+function renderSettings(){
+  settingsHabitsCount.textContent=S.habits.length;
+  settingsPrayersCount.textContent=S.prayers.length;
+  settingsTasksCount.textContent=S.tasks.length;
+  settingsRoutineCount.textContent=S.routine.length;
+  settingsReviewsCount.textContent=Object.keys(S.reviews||{}).length;
+}
+
+openReviewBtn.onclick=()=>{go("review");renderReview()};
+closeReviewBtn.onclick=()=>go("home");
+openAnnualReviewBtn.onclick=()=>{go("annualReview");renderAnnualReview()};
+closeAnnualBtn.onclick=()=>{go("review");renderReview()};
+openSettingsBtn.onclick=()=>{go("settings");renderSettings()};
+closeSettingsBtn.onclick=()=>go("home");
+
+exportBackupBtn.onclick=()=>{
+  const payload={
+    app:"ISA",
+    version:10,
+    exportedAt:new Date().toISOString(),
+    data:S
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`ISA-backup-${dk()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  backupStatus.textContent="Backup exportado. Salve o arquivo no iCloud Drive ou em Arquivos.";
+};
+
+importBackupInput.addEventListener("change",async e=>{
+  const file=e.target.files?.[0]; if(!file) return;
+  try{
+    const text=await file.text(), payload=JSON.parse(text);
+    const incoming=payload.data||payload;
+    if(!incoming.habits||!incoming.prayers||!incoming.tasks) throw new Error("Arquivo inválido");
+    if(!confirm("Restaurar este backup? Os dados atuais serão substituídos.")) return;
+    S={...blank(),...incoming,version:10,reviews:incoming.reviews||{}};
+    save();
+    renderSettings();
+    backupStatus.textContent="Backup restaurado com sucesso.";
+    alert("Backup restaurado.");
+  }catch(err){
+    backupStatus.textContent="Não foi possível importar este arquivo.";
+    alert("Arquivo de backup inválido.");
+  }
 });
 
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});

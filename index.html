@@ -16,6 +16,10 @@
 <section class="screen active" id="home">
 <header class="hero"><div><h1>Olá Isa!</h1><p id="todayText"></p></div><div class="avatar">☁︎</div></header>
 <button class="primary-btn" id="createBtn">＋ Criar novo</button>
+<div class="home-shortcuts">
+  <button class="shortcut-card" id="openReviewBtn"><span>✦</span><div><strong>Retrospectiva do mês</strong><small>Favoritos, exame de consciência e resumo</small></div></button>
+  <button class="shortcut-card" id="openSettingsBtn"><span>⚙︎</span><div><strong>Configurações</strong><small>Backup e restauração</small></div></button>
+</div>
 <h2 class="section-title">O que vamos fazer agora?</h2>
 <section class="quick-grid">
 <button class="quick-card" data-go="habits"><span class="line-icon">▦</span><strong>Hábitos</strong><small id="habitSummary">0 de 0</small></button>
@@ -44,6 +48,7 @@
 <section class="screen" id="prayers">
 <header class="page-head"><div><h1>Minhas orações</h1><p>de hoje</p></div><div class="avatar">☁︎</div></header>
 <div class="toolbar-grid"><button class="pill active" data-prayer-view="today">Hoje</button><button class="pill" data-prayer-view="all">Todas</button><button class="pill" id="prayerHistoryBtn">Histórico</button><button class="pill" id="prayerArchivedBtn">Arquivadas</button></div>
+<input class="search-input" id="prayerSearch" placeholder="Buscar oração..." />
 <div class="list-stack" id="prayerList"></div>
 <button class="fab" data-action="prayer">＋</button>
 </section>
@@ -126,6 +131,134 @@
 </section>
 
 <button class="back-stats" id="closeStatsBtn">← Voltar para o início</button>
+</section>
+
+
+<section class="screen" id="review">
+<header class="page-head"><div><h1>Retrospectiva</h1><p id="reviewMonthLabel"></p></div><div class="avatar">✦</div></header>
+
+<section class="card stats-highlight">
+<span>Seu mês em números</span>
+<strong id="reviewOverallPercent">0%</strong>
+<small>das atividades previstas concluídas</small>
+<div class="progress big-progress"><div id="reviewOverallBar"></div></div>
+</section>
+
+<div class="stats-cards">
+<section class="mini-card"><span>Hábitos</span><strong id="reviewHabits">0/0</strong><small id="reviewHabitsPct">0%</small></section>
+<section class="mini-card"><span>Orações</span><strong id="reviewPrayers">0/0</strong><small id="reviewPrayersPct">0%</small></section>
+<section class="mini-card"><span>Tarefas</span><strong id="reviewTasks">0/0</strong><small id="reviewTasksPct">0%</small></section>
+</div>
+
+<section class="card">
+<h2>Hábitos do mês</h2>
+<div id="reviewHabitList" class="bar-list"></div>
+</section>
+
+<form id="reviewForm" class="review-form">
+<section class="card">
+<h2>Favoritos do mês</h2>
+<label>Música do mês<input id="reviewSong" placeholder="Qual foi a música do mês?"></label>
+<label>Artista do mês<input id="reviewArtist"></label>
+<label>App mais usado<input id="reviewApp"></label>
+<label>Filme do mês<input id="reviewMovie"></label>
+<label>Série do mês<input id="reviewSeries"></label>
+<label>Livro do mês<input id="reviewBook"></label>
+<label>Lugar do mês<input id="reviewPlace"></label>
+</section>
+
+<section class="card">
+<h2>Momentos que quero guardar</h2>
+<label>Momento favorito<textarea id="reviewFavoriteMoment" rows="4"></textarea></label>
+<label>Algo que me fez rir<textarea id="reviewLaugh" rows="3"></textarea></label>
+<label>Algo que aprendi<textarea id="reviewLearned" rows="3"></textarea></label>
+<label>Algo de que me orgulho<textarea id="reviewProud" rows="3"></textarea></label>
+</section>
+
+<section class="card">
+<h2>Exame de consciência mensal</h2>
+<label>Como esteve minha relação com Deus?<textarea id="reviewGod" rows="5"></textarea></label>
+<label>Como cuidei de mim e usei meu tempo?<textarea id="reviewSelf" rows="5"></textarea></label>
+<label>Como tratei as outras pessoas?<textarea id="reviewOthers" rows="5"></textarea></label>
+<label>Como cumpri meus deveres e responsabilidades?<textarea id="reviewDuties" rows="5"></textarea></label>
+<label>O que preciso corrigir ou pedir perdão?<textarea id="reviewCorrect" rows="5"></textarea></label>
+</section>
+
+<section class="card">
+<h2>Fechando o mês</h2>
+<label>Quero agradecer por...<textarea id="reviewGratitude" rows="4"></textarea></label>
+<label>Quero entregar a Deus...<textarea id="reviewOffer" rows="4"></textarea></label>
+<label>Virtude para trabalhar no próximo mês<input id="reviewVirtue"></label>
+<label>Minha prioridade no próximo mês<input id="reviewPriority"></label>
+<label>Intenção de oração para o próximo mês<textarea id="reviewIntention" rows="3"></textarea></label>
+</section>
+
+<button type="submit" class="primary-btn">Salvar retrospectiva</button>
+</form>
+
+<div class="review-actions">
+<button class="pill" id="openAnnualReviewBtn">Ver retrospectiva anual</button>
+<button class="pill" id="closeReviewBtn">Voltar</button>
+</div>
+</section>
+
+<section class="screen" id="annualReview">
+<header class="page-head"><div><h1>Meu ano</h1><p id="annualYearLabel"></p></div><div class="avatar">✦</div></header>
+
+<section class="card stats-highlight">
+<span>Progresso do ano</span>
+<strong id="annualOverallPercent">0%</strong>
+<small>concluído até agora</small>
+<div class="progress big-progress"><div id="annualOverallBar"></div></div>
+</section>
+
+<div class="stats-cards">
+<section class="mini-card"><span>Hábitos</span><strong id="annualHabits">0</strong><small>concluídos</small></section>
+<section class="mini-card"><span>Orações</span><strong id="annualPrayers">0</strong><small>concluídas</small></section>
+<section class="mini-card"><span>Tarefas</span><strong id="annualTasks">0</strong><small>concluídas</small></section>
+</div>
+
+<section class="card">
+<h2>Meus meses</h2>
+<div id="annualMonthList" class="annual-month-list"></div>
+</section>
+
+<section class="card">
+<h2>Músicas do meu ano</h2>
+<div id="annualSongs" class="simple-list"></div>
+</section>
+
+<section class="card">
+<h2>Momentos favoritos</h2>
+<div id="annualMoments" class="simple-list"></div>
+</section>
+
+<button class="back-stats" id="closeAnnualBtn">← Voltar para retrospectiva</button>
+</section>
+
+<section class="screen" id="settings">
+<header class="page-head"><div><h1>Configurações</h1><p>seus dados</p></div><div class="avatar">⚙︎</div></header>
+
+<section class="card">
+<h2>Backup</h2>
+<p>Salve uma cópia dos seus hábitos, orações, tarefas, rotina, estatísticas e retrospectivas.</p>
+<button class="setting-btn" id="exportBackupBtn">Exportar backup</button>
+<label class="setting-btn file-label">Importar backup<input type="file" id="importBackupInput" accept=".json,application/json"></label>
+<small id="backupStatus"></small>
+</section>
+
+<section class="card">
+<h2>Dados do aplicativo</h2>
+<div class="mini-stats">
+<span>Hábitos cadastrados <b id="settingsHabitsCount">0</b></span>
+<span>Orações cadastradas <b id="settingsPrayersCount">0</b></span>
+<span>Tarefas cadastradas <b id="settingsTasksCount">0</b></span>
+<span>Itens de rotina <b id="settingsRoutineCount">0</b></span>
+<span>Retrospectivas salvas <b id="settingsReviewsCount">0</b></span>
+</div>
+</section>
+
+<button class="back-stats" id="closeSettingsBtn">← Voltar para o início</button>
 </section>
 
 </main>
